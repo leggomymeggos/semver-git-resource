@@ -1,0 +1,9 @@
+.gradle/
+.idea/
+build/
+gradle/
+lib/
+out/production
+out/test
+
+*.iml
