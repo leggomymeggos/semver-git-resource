@@ -7,14 +7,14 @@ import com.github.zafarkhaja.semver.Version as SemVer
 class DriverFactoryImpl : DriverFactory {
     override fun fromSource(source: Source): Response<Driver, CheckError> {
         val version: SemVer
-        if (source.initialVersion?.isNotEmpty() ?: false) {
+        version = if (source.initialVersion?.isNotEmpty() == true) {
             try {
-                version = SemVer.valueOf(source.initialVersion)
+                SemVer.valueOf(source.initialVersion)
             } catch (e: Exception) {
                 return Response.Error(CheckError("invalid initial version (${source.initialVersion})", e))
             }
         } else {
-            version = SemVer.valueOf("0.0.0")
+            SemVer.valueOf("0.0.0")
         }
 
         if (source.hasMissingCredentials()) {

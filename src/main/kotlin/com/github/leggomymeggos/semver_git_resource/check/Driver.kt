@@ -28,9 +28,9 @@ open class Driver(
                 .flatMap {
                     setUpKey().flatMap {
                         cloneOrFetchRepo().flatMap {
-                            gitClient.execute("git reset --hard origin/$versionBranch").flatMap {
+                            gitClient.execute("cd $gitRepoDir ; git reset --hard origin/$versionBranch").flatMap {
                                 readVersion().flatMap { number ->
-                                    if(number.greaterThanOrEqualTo(version)) {
+                                    if (number.greaterThanOrEqualTo(version)) {
                                         Response.Success(number)
                                     } else {
                                         Response.Success(null)
@@ -42,9 +42,9 @@ open class Driver(
                 }.flatMapError { Response.Error(it) }
     }
 
-    private fun readVersion() : Response<SemVer, CheckError> {
+    private fun readVersion(): Response<SemVer, CheckError> {
         val versionFile = File("$gitRepoDir/$versionFile")
-        return if(versionFile.exists()) {
+        return if (versionFile.exists()) {
             val number = versionFile.readText()
             try {
                 Response.Success(SemVer.valueOf(number))

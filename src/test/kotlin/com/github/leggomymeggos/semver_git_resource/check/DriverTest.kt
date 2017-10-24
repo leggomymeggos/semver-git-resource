@@ -161,7 +161,7 @@ class DriverTest {
 
         driver.check(SemVer.valueOf("0.0.0"))
 
-        verify(gitClient).execute("git reset --hard origin/${driver.versionBranch}")
+        verify(gitClient).execute("cd ${driver.gitRepoDir} ; git reset --hard origin/${driver.versionBranch}")
     }
 
     @Test

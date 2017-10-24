@@ -4,10 +4,15 @@ import com.github.leggomymeggos.semver_git_resource.models.CheckError
 import com.github.leggomymeggos.semver_git_resource.models.CheckRequest
 import com.github.leggomymeggos.semver_git_resource.models.Source
 import com.github.leggomymeggos.semver_git_resource.models.Version
-import com.nhaarman.mockito_kotlin.*
+import com.nhaarman.mockito_kotlin.any
+import com.nhaarman.mockito_kotlin.mock
+import com.nhaarman.mockito_kotlin.verify
+import com.nhaarman.mockito_kotlin.whenever
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Before
 import org.junit.Test
+import java.io.ByteArrayOutputStream
+import java.io.PrintStream
 import com.github.zafarkhaja.semver.Version as SemVer
 
 class CheckerTest {
@@ -50,20 +55,25 @@ class CheckerTest {
     }
 
     @Test
-    fun `does not check version when the current version number is invalid`() {
-        val request = createRequest(versionNumber = "")
+    fun `continues when the current version number is invalid`() {
+        val request = createRequest(versionNumber = "this is not a real thing bruhhhh")
         checker.check(request)
 
-        verify(driver, never()).check(any())
+        verify(driver).check(SemVer.valueOf("0.0.0"))
     }
 
     @Test
-    fun `returns an error when the current version number is invalid`() {
-        val request = createRequest(versionNumber = "")
-        val response = checker.check(request).getError()
+    fun `reports when the current version is invalid`() {
+        val originalOut = System.out!!
+        val outputStream = ByteArrayOutputStream()
+        System.setOut(PrintStream(outputStream))
 
-        assertThat(response.message).isEqualTo("skipping invalid current version")
-        assertThat(response.exception).isNotNull()
+        val request = createRequest(versionNumber = "this is not a real thing broseph")
+        checker.check(request)
+
+        assertThat(outputStream.toString()).contains("skipping invalid current version: this is not a real thing broseph")
+
+        System.setOut(originalOut)
     }
 
     @Test

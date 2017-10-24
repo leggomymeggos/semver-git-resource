@@ -3,7 +3,9 @@
 build/
 gradle/
 lib/
+node_modules
 out/production
 out/test
+src/**/logs
 
 *.iml
