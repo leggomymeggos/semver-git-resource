@@ -96,4 +96,38 @@ class CheckIntegrationTest {
 
         assertThat(result[0].number).isEqualTo("1.0.1")
     }
+
+    @Test
+    fun `uses version from file when there is one`() {
+        val versionFile = File(tempGitRepo, VERSION_FILE)
+        versionFile.writeText("0.1.0")
+
+        ProcessBuilder("/bin/sh", "-c", "cd ${tempGitRepo.path} ; git checkout $VERSION_BRANCH ; git add $VERSION_FILE ; git commit -m \"add version file\" ; git push origin $VERSION_BRANCH")
+                .redirectOutput(createFile("$LOGS_DIR/git", "add_version_file.txt"))
+                .redirectError(createFile("$LOGS_DIR/git", "add_version_file_error.txt"))
+                .start()
+                .waitFor()
+
+        val request = CheckRequest(
+                version = Version(
+                        number = "", ref = ""
+                ),
+                source = Source(
+                        initialVersion = "1.0.1",
+                        versionFile = VERSION_FILE,
+                        versionBranch = VERSION_BRANCH,
+                        uri = gitUrl,
+                        username = "username",
+                        password = "password"
+                ))
+
+        val jsonRequest = mapper.writeValueAsString(request)
+
+        main(arrayOf(jsonRequest))
+
+        val jsonResult = outputStream.toString()
+        val result = mapper.readValue<List<Version>>(jsonResult.substring(jsonResult.indexOf("["), jsonResult.lastIndexOf("\n")))
+
+        assertThat(result[0].number).isEqualTo("0.1.0")
+    }
 }
