@@ -185,7 +185,7 @@ class DriverTest {
 
         val response = driver.check(SemVer.valueOf("0.0.0")).getSuccess()
 
-        assertThat(response).isEqualTo(SemVer.valueOf("1.2.3"))
+        assertThat(response).containsExactly(SemVer.valueOf("1.2.3"))
     }
 
     @Test
@@ -205,18 +205,18 @@ class DriverTest {
     fun `check returns the initial version if the version file does not exist`() {
         val response = driver.check(SemVer.valueOf("0.0.0")).getSuccess()
 
-        assertThat(response).isEqualTo(SemVer.valueOf("7.80.34"))
+        assertThat(response).containsExactly(SemVer.valueOf("7.80.34"))
     }
     
     @Test 
-    fun `check returns null version when the passed-in version is greater than the driver initial version`() {
+    fun `check returns empty list when the passed-in version is greater than the driver initial version`() {
         val response = driver.check(SemVer.valueOf("8.0.0")).getSuccess()
 
-        assertThat(response).isNull()
+        assertThat(response).isEmpty()
     }
 
     @Test
-    fun `check returns null version when the passed-in version is greater than the saved version in the file`() {
+    fun `check returns empty list when the passed-in version is greater than the saved version in the file`() {
         val versionFile = File("${driver.gitRepoDir}/${driver.versionFile}")
         versionFile.createNewFile()
 
@@ -224,6 +224,6 @@ class DriverTest {
 
         val response = driver.check(SemVer.valueOf("4.0.0")).getSuccess()
 
-        assertThat(response).isNull()
+        assertThat(response).isEmpty()
     }
 }

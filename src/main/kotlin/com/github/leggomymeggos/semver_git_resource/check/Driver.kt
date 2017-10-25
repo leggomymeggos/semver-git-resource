@@ -23,7 +23,7 @@ open class Driver(
     val gitRepoDir = Files.createTempDirectory("semver-git-repo")!!
     val privateKeyPath = File.createTempFile("tmp/private-key", ".txt")!!
 
-    open fun check(version: SemVer): Response<SemVer?, CheckError> {
+    open fun check(version: SemVer): Response<List<SemVer>, CheckError> {
         return setUpUsernamePassword()
                 .flatMap {
                     setUpKey().flatMap {
@@ -31,9 +31,9 @@ open class Driver(
                             gitClient.execute("cd $gitRepoDir ; git reset --hard origin/$versionBranch").flatMap {
                                 readVersion().flatMap { number ->
                                     if (number.greaterThanOrEqualTo(version)) {
-                                        Response.Success(number)
+                                        Response.Success(listOf(number))
                                     } else {
-                                        Response.Success(null)
+                                        Response.Success(emptyList())
                                     }
                                 }
                             }

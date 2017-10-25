@@ -21,8 +21,8 @@ data class Source(
 )
 
 data class CheckRequest(
-        @JsonProperty("version") val version: Version,
-        @JsonProperty("source")  val source: Source
+        @JsonProperty("version") val version: Version?,
+        @JsonProperty("source") val source: Source
 )
 
 data class CheckError(val message: String, val exception: Exception? = null)

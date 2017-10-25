@@ -22,7 +22,7 @@ class CheckerTest {
 
     @Before
     fun `set up`() {
-        whenever(driver.check(any())).thenReturn(Response.Success(SemVer.valueOf("0.0.0")))
+        whenever(driver.check(any())).thenReturn(Response.Success(listOf(SemVer.valueOf("0.0.0"))))
         whenever(driverFactory.fromSource(any())).thenReturn(Response.Success(driver))
     }
 
@@ -56,7 +56,7 @@ class CheckerTest {
 
     @Test
     fun `continues when the current version number is invalid`() {
-        val request = createRequest(versionNumber = "this is not a real thing bruhhhh")
+        val request = createRequest(versionNumber = "1")
         checker.check(request)
 
         verify(driver).check(SemVer.valueOf("0.0.0"))
@@ -77,6 +77,20 @@ class CheckerTest {
     }
 
     @Test
+    fun `does not report that the current version is invalid when it is null`() {
+        val originalOut = System.out!!
+        val outputStream = ByteArrayOutputStream()
+        System.setOut(PrintStream(outputStream))
+
+        val request = createRequest().copy(version = null)
+        checker.check(request)
+
+        assertThat(outputStream.toString()).doesNotContain("skipping invalid current version")
+
+        System.setOut(originalOut)
+    }
+
+    @Test
     fun `returns an error if there is an unsuccessful check`() {
         whenever(driver.check(any())).thenReturn(Response.Error(CheckError("did not check out", Exception("something rull bad happen"))))
 
@@ -88,7 +102,7 @@ class CheckerTest {
 
     @Test
     fun `maps successful check to correct response`() {
-        whenever(driver.check(any())).thenReturn(Response.Success(SemVer.valueOf("1.3.2")))
+        whenever(driver.check(any())).thenReturn(Response.Success(listOf(SemVer.valueOf("1.3.2"))))
 
         val response = checker.check(createRequest()).getSuccess()
 
@@ -96,6 +110,6 @@ class CheckerTest {
     }
 
     private fun createRequest(versionNumber: String = "1.2.3"): CheckRequest {
-        return CheckRequest(Version(versionNumber, ""), Source("", "'"))
+        return CheckRequest(Version(versionNumber, ""), Source("", ""))
     }
 }

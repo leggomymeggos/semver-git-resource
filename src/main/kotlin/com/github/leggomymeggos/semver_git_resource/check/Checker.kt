@@ -8,11 +8,13 @@ import com.github.zafarkhaja.semver.Version as SemVer
 class Checker(private val driverFactory: DriverFactory) {
     fun check(request: CheckRequest): Response<List<Version>, CheckError> {
         var version: SemVer? = null
-        try {
-            version = SemVer.valueOf(request.version.number)
-        } catch (e: Exception) {
-            println("skipping invalid current version: ${request.version.number}")
-            e.printStackTrace()
+        if (request.version != null) {
+            try {
+                version = SemVer.valueOf(request.version.number)
+            } catch (e: Exception) {
+                println("skipping invalid current version: ${request.version.number}")
+                e.printStackTrace()
+            }
         }
 
         return driverFactory.fromSource(request.source)
@@ -21,7 +23,9 @@ class Checker(private val driverFactory: DriverFactory) {
                     driver.check(version ?: SemVer.valueOf("0.0.0"))
                             .flatMapError { error -> handleCheckingError(error) }
                             .flatMap { semVersion ->
-                                Response.Success(listOf(Version(number = semVersion.toString(), ref = "")))
+                                Response.Success(semVersion.map {
+                                    Version(number = it.toString(), ref = "")
+                                })
                             }
                 }
     }
