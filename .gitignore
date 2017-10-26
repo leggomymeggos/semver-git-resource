@@ -7,5 +7,5 @@ node_modules
 out/production
 out/test
 src/**/logs
-
+**/**/secret.*
 *.iml

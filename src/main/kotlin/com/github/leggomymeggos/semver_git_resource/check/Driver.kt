@@ -45,7 +45,7 @@ open class Driver(
     private fun readVersion(): Response<SemVer, CheckError> {
         val versionFile = File("$gitRepoDir/$versionFile")
         return if (versionFile.exists()) {
-            val number = versionFile.readText()
+            val number = versionFile.readText().trim()
             try {
                 Response.Success(SemVer.valueOf(number))
             } catch (e: Exception) {
@@ -62,7 +62,7 @@ open class Driver(
         return if (!Files.exists(gitRepoDir) || gitFiles.isEmpty()) {
             gitClient.execute("git clone $gitUri --branch $versionBranch $gitRepoDir")
         } else {
-            gitClient.execute("git fetch origin $versionBranch")
+            gitClient.execute("cd $gitRepoDir ; git fetch origin $versionBranch")
         }
     }
 
@@ -74,11 +74,12 @@ open class Driver(
         try {
             privateKeyPath.mkdirs()
             privateKeyPath.writeText(privateKey)
+            ProcessBuilder("/bin/sh", "-c", "chmod 600 $privateKeyPath").start().waitFor()
         } catch (e: Exception) {
             return Response.Error(CheckError("error saving private key", e))
         }
         gitClient.setEnv("GIT_SSH_COMMAND", "ssh -o StrictHostKeyChecking=no -i $privateKeyPath")
-        return Response.Success("")
+        return Response.Success("successfully saved private key")
     }
 
     private fun setUpUsernamePassword(): Response<String, CheckError> {

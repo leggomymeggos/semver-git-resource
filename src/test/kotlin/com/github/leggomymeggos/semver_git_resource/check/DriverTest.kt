@@ -127,7 +127,7 @@ class DriverTest {
 
         driver.check(SemVer.valueOf("0.0.0"))
 
-        verify(gitClient).execute("git fetch origin ${driver.versionBranch}")
+        verify(gitClient).execute("cd ${driver.gitRepoDir} ; git fetch origin ${driver.versionBranch}")
     }
 
     @Test
@@ -154,7 +154,7 @@ class DriverTest {
         assertThat(response.message).isEqualTo("something else done fucked up yo")
         assertThat(response.exception).isEqualTo(exception)
     }
-    
+
     @Test 
     fun `check resets repo to head of version branch`() {
         whenever(gitClient.execute(any())).thenReturn(Response.Success("successfully ran the thing"))
@@ -182,6 +182,18 @@ class DriverTest {
         versionFile.createNewFile()
 
         versionFile.writeText("1.2.3")
+
+        val response = driver.check(SemVer.valueOf("0.0.0")).getSuccess()
+
+        assertThat(response).containsExactly(SemVer.valueOf("1.2.3"))
+    }
+
+    @Test
+    fun `check trims the version from the file`() {
+        val versionFile = File("${driver.gitRepoDir}/${driver.versionFile}")
+        versionFile.createNewFile()
+
+        versionFile.writeText("\n\n 1.2.3   \n ")
 
         val response = driver.check(SemVer.valueOf("0.0.0")).getSuccess()
 
