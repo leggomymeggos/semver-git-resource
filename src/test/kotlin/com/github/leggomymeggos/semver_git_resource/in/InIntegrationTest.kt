@@ -85,6 +85,19 @@ class InIntegrationTest {
         assertThat(outputStream.toString()).contains("bumped version locally from 1.5.3 to 2.0.0")
     }
 
+    @Test
+    fun `prints version bump with prerelease tags`() {
+        InRequest(
+                version = Version(number = "1.5.3", ref = ""),
+                params = VersionParams(pre = "rc"),
+                source = createSource()
+        ).writeToStdIn()
+
+        main(arrayOf("", ""))
+
+        assertThat(outputStream.toString()).contains("bumped version locally from 1.5.3 to 1.5.3-rc.1")
+    }
+
     private fun createSource(): Source = Source(uri = "", versionFile = "")
 
     private fun InRequest.writeToStdIn() {

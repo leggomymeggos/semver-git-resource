@@ -6,14 +6,30 @@ interface Bump {
     fun apply(version: SemVer) : SemVer
 }
 
-class PatchBump : Bump {
-    override fun apply(version: SemVer): SemVer = version.incrementPatchVersion()
+class PatchBump(private val tag: String = "") : Bump {
+    override fun apply(version: SemVer): SemVer {
+        return version.incrementPatchVersion().addPreReleaseTag(tag)
+    }
 }
 
-class MinorBump : Bump {
-    override fun apply(version: SemVer): SemVer = version.incrementMinorVersion()
+class MinorBump(private val tag: String = "") : Bump {
+    override fun apply(version: SemVer): SemVer = version.incrementMinorVersion().addPreReleaseTag(tag)
 }
 
-class MajorBump : Bump {
-    override fun apply(version: SemVer): SemVer = version.incrementMajorVersion()
+class MajorBump(private val tag: String = "") : Bump {
+    override fun apply(version: SemVer): SemVer = version.incrementMajorVersion().addPreReleaseTag(tag)
+}
+
+class PreReleaseBump(private val tag: String) : Bump {
+    override fun apply(version: SemVer): SemVer {
+        return version.setPreReleaseVersion(tag).incrementPreReleaseVersion()
+    }
+}
+
+fun SemVer.addPreReleaseTag(tag: String) : SemVer {
+    return if(tag.isNotEmpty()) {
+        this.setPreReleaseVersion(tag).incrementPreReleaseVersion()
+    } else {
+        this
+    }
 }
