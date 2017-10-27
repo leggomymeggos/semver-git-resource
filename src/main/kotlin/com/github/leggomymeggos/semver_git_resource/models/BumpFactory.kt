@@ -7,6 +7,7 @@ class BumpFactory {
         return when (bumpTarget) {
             "patch" -> Response.Success(PatchBump())
             "minor" -> Response.Success(MinorBump())
+            "major" -> Response.Success(MajorBump())
             else -> {
                 Response.Error("bump target $bumpTarget not recognized")
             }

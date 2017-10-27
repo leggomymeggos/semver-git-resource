@@ -20,5 +20,11 @@ class BumpFactoryTest {
         val bump = factory.create("minor", "").getSuccess()
         assertThat(bump.apply(Version.valueOf("0.0.1"))).isEqualTo(Version.valueOf("0.1.0"))
     }
+
+    @Test
+    fun `creates major bumper`() {
+        val bump = factory.create("major", "").getSuccess()
+        assertThat(bump.apply(Version.valueOf("0.0.1"))).isEqualTo(Version.valueOf("1.0.0"))
+    }
 }
 

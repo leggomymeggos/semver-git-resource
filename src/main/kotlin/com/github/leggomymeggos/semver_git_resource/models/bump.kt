@@ -13,3 +13,7 @@ class PatchBump : Bump {
 class MinorBump : Bump {
     override fun apply(version: SemVer): SemVer = version.incrementMinorVersion()
 }
+
+class MajorBump : Bump {
+    override fun apply(version: SemVer): SemVer = version.incrementMajorVersion()
+}
