@@ -98,6 +98,32 @@ class InIntegrationTest {
         assertThat(outputStream.toString()).contains("bumped version locally from 1.5.3 to 1.5.3-rc.1")
     }
 
+    @Test
+    fun `prints version bump with incremented prerelease tags`() {
+        InRequest(
+                version = Version(number = "1.5.3-rc.1", ref = ""),
+                params = VersionParams(pre = "rc"),
+                source = createSource()
+        ).writeToStdIn()
+
+        main(arrayOf("", ""))
+
+        assertThat(outputStream.toString()).contains("bumped version locally from 1.5.3-rc.1 to 1.5.3-rc.2")
+    }
+
+    @Test
+    fun `prints error message when the bump target is invalid`() {
+        InRequest(
+                version = Version(number = "1.5.3", ref = ""),
+                params = VersionParams(bump = "some bump"),
+                source = createSource()
+        ).writeToStdIn()
+
+        main(arrayOf("", ""))
+
+        assertThat(outputStream.toString()).contains("bump target (some bump) not recognized")
+    }
+
     private fun createSource(): Source = Source(uri = "", versionFile = "")
 
     private fun InRequest.writeToStdIn() {

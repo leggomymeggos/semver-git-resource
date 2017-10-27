@@ -12,7 +12,7 @@ class BumpFactory {
             "minor" -> Response.Success(MinorBump(preReleaseTag))
             "major" -> Response.Success(MajorBump(preReleaseTag))
             else -> {
-                Response.Error("bump target $bumpTarget not recognized")
+                Response.Error("bump target ($bumpTarget) not recognized")
             }
         }
     }
