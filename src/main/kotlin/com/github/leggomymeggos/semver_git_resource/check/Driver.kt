@@ -23,24 +23,23 @@ open class Driver(
     val gitRepoDir = Files.createTempDirectory("semver-git-repo")!!
     val privateKeyPath = File.createTempFile("tmp/private-key", ".txt")!!
 
-    open fun check(version: SemVer): Response<List<SemVer>, CheckError> {
-        return setUpUsernamePassword()
-                .flatMap {
-                    setUpKey().flatMap {
-                        cloneOrFetchRepo().flatMap {
-                            gitClient.execute("cd $gitRepoDir ; git reset --hard origin/$versionBranch").flatMap {
-                                readVersion().flatMap { number ->
-                                    if (number.greaterThanOrEqualTo(version)) {
-                                        Response.Success(listOf(number))
-                                    } else {
-                                        Response.Success(emptyList())
+    open fun check(version: SemVer): Response<List<SemVer>, CheckError> =
+            setUpUsernamePassword()
+                    .flatMap {
+                        setUpKey().flatMap {
+                            cloneOrFetchRepo().flatMap {
+                                gitClient.execute("cd $gitRepoDir ; git reset --hard origin/$versionBranch").flatMap {
+                                    readVersion().flatMap { number ->
+                                        if (number.greaterThanOrEqualTo(version)) {
+                                            Response.Success(listOf(number))
+                                        } else {
+                                            Response.Success(emptyList())
+                                        }
                                     }
                                 }
                             }
                         }
-                    }
-                }.flatMapError { Response.Error(it) }
-    }
+                    }.flatMapError { Response.Error(it) }
 
     private fun readVersion(): Response<SemVer, CheckError> {
         val versionFile = File("$gitRepoDir/$versionFile")

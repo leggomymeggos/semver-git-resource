@@ -11,6 +11,7 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
+import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.PrintStream
@@ -21,6 +22,7 @@ class GitAuthenticationIntegrationTest {
 
     private val mapper = ObjectMapper()
     private val originalOut = System.out!!
+    private val originalIn = System.`in`!!
     private val outputStream = ByteArrayOutputStream()
 
     private val PROPERTIES = loadProperties()
@@ -43,12 +45,13 @@ class GitAuthenticationIntegrationTest {
 
     @After
     fun `tear down`() {
+        System.setIn(originalIn)
         System.setOut(originalOut)
     }
 
     @Test
     fun `can authenticate with ssh`() {
-        val request = CheckRequest(
+        CheckRequest(
                 version = null,
                 source = Source(
                         versionFile = VERSION_FILE,
@@ -56,8 +59,8 @@ class GitAuthenticationIntegrationTest {
                         uri = PROPERTIES["git.ssh.url"]!!,
                         privateKey = File(PROPERTIES["ssh.key.file"]).readText()
                 )
-        )
-        main(arrayOf(mapper.writeValueAsString(request)))
+        ).writeToStdIn()
+        main(arrayOf())
 
         val jsonResult = outputStream.toString()
         val result: List<Version> = mapper.readValue(jsonResult.substring(jsonResult.indexOf("["), jsonResult.lastIndexOf("\n")))
@@ -67,7 +70,7 @@ class GitAuthenticationIntegrationTest {
 
     @Test
     fun `can authenticate with https`() {
-        val request = CheckRequest(
+        CheckRequest(
                 version = null,
                 source = Source(
                         versionFile = VERSION_FILE,
@@ -76,12 +79,19 @@ class GitAuthenticationIntegrationTest {
                         username = PROPERTIES["git.username"],
                         password = PROPERTIES["git.password"]
                 )
-        )
-        main(arrayOf(mapper.writeValueAsString(request)))
+        ).writeToStdIn()
+        main(arrayOf())
 
         val jsonResult = outputStream.toString()
         val result: List<Version> = mapper.readValue(jsonResult.substring(jsonResult.indexOf("["), jsonResult.lastIndexOf("\n")))
 
         assertThat(result[0].number).isEqualTo("0.0.1") // the number in the version file
+    }
+
+    private fun CheckRequest.writeToStdIn() {
+        val jsonRequest = mapper.writeValueAsString(this)
+
+        val inputStream = ByteArrayInputStream(jsonRequest.toByteArray())
+        System.setIn(inputStream)
     }
 }

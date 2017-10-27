@@ -9,6 +9,7 @@ import com.github.leggomymeggos.semver_git_resource.models.Version
 import khttp.post
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.*
+import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.PrintStream
@@ -48,6 +49,8 @@ class CheckIntegrationTest {
     private val originalOut = System.out!!
     private val outputStream = ByteArrayOutputStream()
 
+    private val originalIn = System.`in`
+
     private var gitUrl: String = ""
     private val tempGitRepo = createTempDir()
 
@@ -63,18 +66,18 @@ class CheckIntegrationTest {
 
     @After
     fun `tear down`() {
+        System.setIn(originalIn)
         System.setOut(originalOut)
     }
 
     @Test
     fun `sets initial version from the source when there is no known version and no version file provided`() {
-        val request = CheckRequest(
+        CheckRequest(
                 version = null,
                 source = baseSource().copy(initialVersion = "1.0.1")
-        )
+        ).writeToStdIn()
 
-        val jsonRequest = mapper.writeValueAsString(request)
-        main(arrayOf(jsonRequest))
+        main(arrayOf())
 
         val result = getResult()[0]
 
@@ -84,14 +87,12 @@ class CheckIntegrationTest {
     @Test
     fun `uses version from file when there is one`() {
         addVersionFile("0.1.0")
-
-        val request = CheckRequest(
+        CheckRequest(
                 version = null,
                 source = baseSource().copy(initialVersion = "1.0.1")
-        )
+        ).writeToStdIn()
 
-        val jsonRequest = mapper.writeValueAsString(request)
-        main(arrayOf(jsonRequest))
+        main(arrayOf())
 
         val result = getResult()[0]
 
@@ -101,14 +102,14 @@ class CheckIntegrationTest {
     @Test
     fun `emits empty list when the last known number is higher than the number in the file`() {
         addVersionFile("2.0.1")
-        val request = CheckRequest(
+        CheckRequest(
                 version = Version(
                         number = "2.0.2", ref = ""
                 ),
-                source = baseSource())
+                source = baseSource()
+        ).writeToStdIn()
 
-        val jsonRequest = mapper.writeValueAsString(request)
-        main(arrayOf(jsonRequest))
+        main(arrayOf())
 
         val result = getResult()
 
@@ -119,14 +120,14 @@ class CheckIntegrationTest {
     @Test
     fun `emits list of current version when the last known number is equal to than the number in the file`() {
         addVersionFile("2.0.2")
-        val request = CheckRequest(
+        CheckRequest(
                 version = Version(
                         number = "2.0.2", ref = ""
                 ),
-                source = baseSource())
+                source = baseSource()
+        ).writeToStdIn()
 
-        val jsonRequest = mapper.writeValueAsString(request)
-        main(arrayOf(jsonRequest))
+        main(arrayOf())
 
         val result = getResult()[0]
 
@@ -136,14 +137,14 @@ class CheckIntegrationTest {
     @Test
     fun `emits list of current version when the last known number is less than than the number in the file`() {
         addVersionFile("2.30.2")
-        val request = CheckRequest(
+        CheckRequest(
                 version = Version(
                         number = "2.0.2", ref = ""
                 ),
-                source = baseSource())
+                source = baseSource()
+        ).writeToStdIn()
 
-        val jsonRequest = mapper.writeValueAsString(request)
-        main(arrayOf(jsonRequest))
+        main(arrayOf())
 
         val result = getResult()[0]
 
@@ -153,14 +154,14 @@ class CheckIntegrationTest {
     @Test
     fun `emits empty list and prints that the file has no number when the file has invalid number`() {
         addVersionFile("not gonna work yo")
-        val request = CheckRequest(
+        CheckRequest(
                 version = Version(
                         number = "2.1.2", ref = ""
                 ),
-                source = baseSource())
+                source = baseSource()
+        ).writeToStdIn()
 
-        val jsonRequest = mapper.writeValueAsString(request)
-        main(arrayOf(jsonRequest))
+        main(arrayOf())
 
         val result = getResult()
 
@@ -170,7 +171,7 @@ class CheckIntegrationTest {
 
     @Test
     fun `emits empty list and prints that the initial version is invalid when the initial version is invalid`() {
-        val request = CheckRequest(
+        CheckRequest(
                 version = Version(
                         number = "2.1.2", ref = ""
                 ),
@@ -180,10 +181,10 @@ class CheckIntegrationTest {
                         versionBranch = VERSION_BRANCH,
                         uri = gitUrl,
                         privateKey = "i exist so this doesn't error"
-                ))
+                )
+        ).writeToStdIn()
 
-        val jsonRequest = mapper.writeValueAsString(request)
-        main(arrayOf(jsonRequest))
+        main(arrayOf())
 
         val result = getResult()
 
@@ -214,18 +215,19 @@ class CheckIntegrationTest {
                 .waitFor()
     }
 
-    private fun baseSource(): Source {
-        return Source(
-                versionFile = VERSION_FILE,
-                versionBranch = VERSION_BRANCH,
-                uri = gitUrl,
-                privateKey = "i exist so this doesn't error"
-        )
-    }
+    private fun baseSource() =
+            Source(
+                    versionFile = VERSION_FILE,
+                    versionBranch = VERSION_BRANCH,
+                    uri = gitUrl,
+                    privateKey = "i exist so this doesn't error"
+            )
 
-    private fun getResult(): List<Version> {
-        val jsonResult = outputStream.toString()
-        return mapper.readValue(jsonResult.substring(jsonResult.indexOf("["), jsonResult.lastIndexOf("\n")))
+    private fun CheckRequest.writeToStdIn() {
+        val jsonRequest = mapper.writeValueAsString(this)
+
+        val inputStream = ByteArrayInputStream(jsonRequest.toByteArray())
+        System.setIn(inputStream)
     }
 
     private fun addVersionFile(number: String) {
@@ -242,5 +244,10 @@ class CheckIntegrationTest {
                 .redirectError(createFile("$LOGS_DIR/git", "add_version_file_error.txt"))
                 .start()
                 .waitFor()
+    }
+
+    private fun getResult(): List<Version> {
+        val jsonResult = outputStream.toString()
+        return mapper.readValue(jsonResult.substring(jsonResult.indexOf("["), jsonResult.lastIndexOf("\n")))
     }
 }

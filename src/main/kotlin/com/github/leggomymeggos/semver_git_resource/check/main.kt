@@ -6,12 +6,17 @@ import com.fasterxml.jackson.module.kotlin.readValue
 import com.github.leggomymeggos.semver_git_resource.models.CheckError
 import com.github.leggomymeggos.semver_git_resource.models.CheckRequest
 import com.github.leggomymeggos.semver_git_resource.models.Version
+import java.io.BufferedReader
+import java.io.InputStreamReader
 
 fun main(args: Array<String>) {
     val mapper = ObjectMapper()
     mapper.propertyNamingStrategy = PropertyNamingStrategy.SNAKE_CASE
 
-    val request = mapper.readValue<CheckRequest>(args[0])
+    val reader = BufferedReader(InputStreamReader(System.`in`))
+    val input = reader.readLines().joinToString()
+
+    val request = mapper.readValue<CheckRequest>(input)
 
     val result: Response<List<Version>, CheckError> = Checker(DriverFactoryImpl()).check(request)
     try {
