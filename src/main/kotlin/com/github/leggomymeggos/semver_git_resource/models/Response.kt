@@ -1,4 +1,4 @@
-package com.github.leggomymeggos.semver_git_resource.check
+package com.github.leggomymeggos.semver_git_resource.models
 
 sealed class Response<out S, out E> {
     class Success<out S>(val value: S) : Response<S, Nothing>()

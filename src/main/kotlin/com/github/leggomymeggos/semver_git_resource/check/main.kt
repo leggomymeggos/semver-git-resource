@@ -3,9 +3,7 @@ package com.github.leggomymeggos.semver_git_resource.check
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.PropertyNamingStrategy
 import com.fasterxml.jackson.module.kotlin.readValue
-import com.github.leggomymeggos.semver_git_resource.models.CheckError
-import com.github.leggomymeggos.semver_git_resource.models.CheckRequest
-import com.github.leggomymeggos.semver_git_resource.models.Version
+import com.github.leggomymeggos.semver_git_resource.models.*
 import java.io.BufferedReader
 import java.io.InputStreamReader
 

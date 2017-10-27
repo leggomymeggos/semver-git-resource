@@ -1,6 +1,8 @@
 package com.github.leggomymeggos.semver_git_resource.check
 
 import com.github.leggomymeggos.semver_git_resource.models.Source
+import com.github.leggomymeggos.semver_git_resource.models.getError
+import com.github.leggomymeggos.semver_git_resource.models.getSuccess
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Test
 import java.util.*

@@ -1,8 +1,6 @@
 package com.github.leggomymeggos.semver_git_resource.check
 
-import com.github.leggomymeggos.semver_git_resource.models.CheckError
-import com.github.leggomymeggos.semver_git_resource.models.CheckRequest
-import com.github.leggomymeggos.semver_git_resource.models.Version
+import com.github.leggomymeggos.semver_git_resource.models.*
 import com.github.zafarkhaja.semver.Version as SemVer
 
 class Checker(private val driverFactory: DriverFactory) {

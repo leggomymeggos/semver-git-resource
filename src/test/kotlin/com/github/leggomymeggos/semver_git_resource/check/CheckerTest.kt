@@ -1,9 +1,6 @@
 package com.github.leggomymeggos.semver_git_resource.check
 
-import com.github.leggomymeggos.semver_git_resource.models.CheckError
-import com.github.leggomymeggos.semver_git_resource.models.CheckRequest
-import com.github.leggomymeggos.semver_git_resource.models.Source
-import com.github.leggomymeggos.semver_git_resource.models.Version
+import com.github.leggomymeggos.semver_git_resource.models.*
 import com.nhaarman.mockito_kotlin.any
 import com.nhaarman.mockito_kotlin.mock
 import com.nhaarman.mockito_kotlin.verify

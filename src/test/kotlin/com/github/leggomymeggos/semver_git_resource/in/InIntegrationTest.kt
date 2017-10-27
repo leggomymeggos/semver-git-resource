@@ -59,6 +59,19 @@ class InIntegrationTest {
         assertThat(outputStream.toString()).contains("bumped version locally from 1.5.3 to 1.5.4")
     }
 
+    @Test
+    fun `prints minor version bump`() {
+        InRequest(
+                version = Version(number = "1.5.3", ref = ""),
+                params = VersionParams(bump = "minor"),
+                source = createSource()
+        ).writeToStdIn()
+
+        main(arrayOf("", ""))
+
+        assertThat(outputStream.toString()).contains("bumped version locally from 1.5.3 to 1.6.0")
+    }
+
     private fun createSource(): Source = Source(uri = "", versionFile = "")
 
     private fun InRequest.writeToStdIn() {
