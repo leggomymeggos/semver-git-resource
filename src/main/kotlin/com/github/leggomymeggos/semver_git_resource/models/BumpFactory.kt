@@ -11,6 +11,7 @@ class BumpFactory {
             "patch" -> Response.Success(PatchBump(preReleaseTag))
             "minor" -> Response.Success(MinorBump(preReleaseTag))
             "major" -> Response.Success(MajorBump(preReleaseTag))
+            "final" -> Response.Success(FinalBump())
             else -> {
                 Response.Error("bump target ($bumpTarget) not recognized")
             }

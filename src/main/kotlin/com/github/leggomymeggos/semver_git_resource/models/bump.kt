@@ -26,6 +26,12 @@ class PreReleaseBump(private val tag: String) : Bump {
     }
 }
 
+class FinalBump : Bump {
+    override fun apply(version: SemVer): SemVer {
+        return SemVer.forIntegers(version.majorVersion, version.minorVersion, version.patchVersion)
+    }
+}
+
 fun SemVer.addPreReleaseTag(tag: String) : SemVer {
     return when {
         preReleaseVersion.isNotEmpty() && preReleaseVersion.split(".")[0] == tag ->

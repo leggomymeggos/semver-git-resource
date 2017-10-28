@@ -59,6 +59,12 @@ class BumpFactoryTest {
     }
 
     @Test
+    fun `creates final bumper`() {
+        val bump = factory.create("final", "").getSuccess()
+        assertThat(bump.apply(Version.valueOf("0.0.1-pre.2"))).isEqualTo(Version.valueOf("0.0.1"))
+    }
+
+    @Test
     @Ignore
     fun `increments version bumpers with pre releases`() {
         mapOf(

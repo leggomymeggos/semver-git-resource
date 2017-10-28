@@ -112,6 +112,19 @@ class InIntegrationTest {
     }
 
     @Test
+    fun `prints final version bump`() {
+        InRequest(
+                version = Version(number = "1.5.3-rc.1", ref = ""),
+                params = VersionParams(bump = "final"),
+                source = createSource()
+        ).writeToStdIn()
+
+        main(arrayOf("", ""))
+
+        assertThat(outputStream.toString()).contains("bumped version locally from 1.5.3-rc.1 to 1.5.3")
+    }
+
+    @Test
     fun `prints error message when the bump target is invalid`() {
         InRequest(
                 version = Version(number = "1.5.3", ref = ""),
