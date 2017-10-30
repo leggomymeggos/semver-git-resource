@@ -125,16 +125,16 @@ class InIntegrationTest {
     }
 
     @Test
-    fun `prints error message when the bump target is invalid`() {
+    fun `does not print anything if the request contains no versioning params`() {
         InRequest(
                 version = Version(number = "1.5.3", ref = ""),
-                params = VersionParams(bump = "some bump"),
+                params = VersionParams(),
                 source = createSource()
         ).writeToStdIn()
 
         main(arrayOf("", ""))
 
-        assertThat(outputStream.toString()).contains("bump target (some bump) not recognized")
+        assertThat(outputStream.toString()).doesNotContain("bumped")
     }
 
     private fun createSource(): Source = Source(uri = "", versionFile = "")
