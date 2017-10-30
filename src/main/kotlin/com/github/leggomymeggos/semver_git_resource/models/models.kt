@@ -31,6 +31,16 @@ data class InRequest(
         @JsonProperty("params")  val params:  VersionParams
 )
 
+data class InResponse(
+        @JsonProperty("version")  val version:  Version,
+        @JsonProperty("metadata") val metadata: List<MetadataField>
+)
+
+data class MetadataField(
+        @JsonProperty("name")  val name:  String,
+        @JsonProperty("value") val value: String
+)
+
 data class VersionParams(
         @JsonProperty("bump") val bump: String = "",
         @JsonProperty("pre")  val pre:  String = ""

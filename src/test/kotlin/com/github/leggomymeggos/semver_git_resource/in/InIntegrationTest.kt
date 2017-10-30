@@ -2,10 +2,8 @@ package com.github.leggomymeggos.semver_git_resource.`in`
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.PropertyNamingStrategy
-import com.github.leggomymeggos.semver_git_resource.models.InRequest
-import com.github.leggomymeggos.semver_git_resource.models.Source
-import com.github.leggomymeggos.semver_git_resource.models.Version
-import com.github.leggomymeggos.semver_git_resource.models.VersionParams
+import com.fasterxml.jackson.module.kotlin.readValue
+import com.github.leggomymeggos.semver_git_resource.models.*
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.After
 import org.junit.Before
@@ -166,6 +164,28 @@ class InIntegrationTest {
         
         assertThat(File(destination, "version").readText()).contains("1.5.3")
         assertThat(File(destination, "number").readText()).contains("1.5.3")
+    }
+
+    @Test
+    fun `prints the current version and number metadata`() {
+        InRequest(
+                version = Version(number = "1.5.3", ref = ""),
+                params = VersionParams(bump = "major", pre = "pre"),
+                source = createSource()
+        ).writeToStdIn()
+
+        main(arrayOf("", destination))
+
+        val output = outputStream.toString()
+        val responseString = output.substring(output.indexOf("{"), output.lastIndexOf("\n"))
+        val inResponse = mapper.readValue<InResponse>(responseString)
+
+        assertThat(inResponse).isEqualTo(
+                InResponse(
+                        version = Version(number = "1.5.3", ref = ""),
+                        metadata = listOf(MetadataField("number", "1.5.3"))
+                )
+        )
     }
 
     private fun createSource(): Source = Source(uri = "", versionFile = "")

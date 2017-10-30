@@ -5,6 +5,8 @@ import com.fasterxml.jackson.databind.PropertyNamingStrategy
 import com.fasterxml.jackson.module.kotlin.readValue
 import com.github.leggomymeggos.semver_git_resource.models.BumpFactory
 import com.github.leggomymeggos.semver_git_resource.models.InRequest
+import com.github.leggomymeggos.semver_git_resource.models.InResponse
+import com.github.leggomymeggos.semver_git_resource.models.MetadataField
 import java.io.BufferedReader
 import java.io.File
 import java.io.InputStreamReader
@@ -19,9 +21,7 @@ fun main(args: Array<String>) {
     }
 
     val reader = BufferedReader(InputStreamReader(System.`in`))
-    val input = reader.readLines().joinToString()
-
-    val request = mapper.readValue<InRequest>(input)
+    val request = mapper.readValue<InRequest>(reader.readLines().joinToString())
 
     val inputVersion = SemVer.valueOf(request.version.number)
 
@@ -30,16 +30,24 @@ fun main(args: Array<String>) {
     if (version != inputVersion) {
         println("bumped version locally from $inputVersion to $version")
     }
-    try {
-        val destFile = File(args[1])
-        destFile.mkdirs()
-        listOf("version", "number").forEach { fileName ->
+
+    val destFile = File(args[1])
+    destFile.mkdirs()
+    listOf("version", "number").forEach { fileName ->
+        try {
             val file = File(destFile, fileName)
             file.writeText(version.toString())
+        } catch (e: Exception) {
+            println("error writing to file: ${args[1]}/$fileName")
+            e.printStackTrace()
         }
-    } catch (e: Exception) {
-        println("error writing to file: ${args[1]}")
-        e.printStackTrace()
     }
+
+    val response = InResponse(
+            version = request.version,
+            metadata = listOf(MetadataField(name = "number", value = request.version.number)
+            )
+    )
+    println(mapper.writeValueAsString(response))
 }
 
