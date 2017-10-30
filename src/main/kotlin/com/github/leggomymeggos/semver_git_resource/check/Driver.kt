@@ -44,6 +44,14 @@ open class Driver(
                         }
                     }.flatMapError { Response.Error(it) }
 
+    fun bump() {
+        setUpUsernamePassword().flatMap {
+            setUpKey().flatMap {
+                cloneOrFetchRepo()
+            }
+        }
+    }
+
     private fun readVersion(): Response<SemVer, CheckError> {
         val versionFile = File("$gitRepoDir/$versionFile")
         return if (versionFile.exists()) {

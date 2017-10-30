@@ -36,6 +36,12 @@ data class InResponse(
         @JsonProperty("metadata") val metadata: List<MetadataField>
 )
 
+data class OutRequest(
+        @JsonProperty("version") val version: Version,
+        @JsonProperty("source")  val source:  Source,
+        @JsonProperty("params")  val params:  VersionParams
+)
+
 data class MetadataField(
         @JsonProperty("name")  val name:  String,
         @JsonProperty("value") val value: String

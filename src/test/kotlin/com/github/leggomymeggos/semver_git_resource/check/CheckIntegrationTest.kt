@@ -16,7 +16,7 @@ import java.io.PrintStream
 
 class CheckIntegrationTest {
     companion object {
-        private val LOGS_DIR = "./src/test/logs"
+        private val LOGS_DIR = "./src/test/logs/check"
 
         private val quickGitProcess: Process = ProcessBuilder("quickgit")
                 .redirectOutput(createFile("$LOGS_DIR/quickgit/", "success.txt"))

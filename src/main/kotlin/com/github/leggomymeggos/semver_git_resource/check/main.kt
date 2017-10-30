@@ -12,9 +12,8 @@ fun main(args: Array<String>) {
     mapper.propertyNamingStrategy = PropertyNamingStrategy.SNAKE_CASE
 
     val reader = BufferedReader(InputStreamReader(System.`in`))
-    val input = reader.readLines().joinToString()
 
-    val request = mapper.readValue<CheckRequest>(input)
+    val request = mapper.readValue<CheckRequest>(reader.readLines().joinToString())
 
     val result: Response<List<Version>, CheckError> = Checker(DriverFactoryImpl()).check(request)
     try {
