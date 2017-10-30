@@ -12,7 +12,9 @@ import org.junit.Before
 import org.junit.Test
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
+import java.io.File
 import java.io.PrintStream
+import java.nio.file.Files
 
 class InIntegrationTest {
 
@@ -21,6 +23,7 @@ class InIntegrationTest {
     private val outputStream = ByteArrayOutputStream()
 
     private val originalIn = System.`in`
+    private val destination = Files.createTempDirectory("tmp").toAbsolutePath().toString()
 
     @Before
     fun `set up`() {
@@ -135,6 +138,34 @@ class InIntegrationTest {
         main(arrayOf("", ""))
 
         assertThat(outputStream.toString()).doesNotContain("bumped")
+    }
+
+    @Test
+    fun `saves the bumped version in a number and a version file in the destination`() {
+        InRequest(
+                version = Version(number = "1.5.3", ref = ""),
+                params = VersionParams(bump = "minor", pre = "pre"),
+                source = createSource()
+        ).writeToStdIn()
+
+        main(arrayOf("", destination))
+
+        assertThat(File(destination, "version").readText()).contains("1.6.0-pre.1")
+        assertThat(File(destination, "number").readText()).contains("1.6.0-pre.1")
+    }
+
+    @Test
+    fun `saves the current version in a number and a version file in the destination`() {
+        InRequest(
+                version = Version(number = "1.5.3", ref = ""),
+                params = VersionParams(),
+                source = createSource()
+        ).writeToStdIn()
+
+        main(arrayOf("", destination))
+        
+        assertThat(File(destination, "version").readText()).contains("1.5.3")
+        assertThat(File(destination, "number").readText()).contains("1.5.3")
     }
 
     private fun createSource(): Source = Source(uri = "", versionFile = "")

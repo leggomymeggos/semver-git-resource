@@ -6,6 +6,7 @@ import com.fasterxml.jackson.module.kotlin.readValue
 import com.github.leggomymeggos.semver_git_resource.models.BumpFactory
 import com.github.leggomymeggos.semver_git_resource.models.InRequest
 import java.io.BufferedReader
+import java.io.File
 import java.io.InputStreamReader
 import com.github.zafarkhaja.semver.Version as SemVer
 
@@ -28,6 +29,17 @@ fun main(args: Array<String>) {
     val version = result.apply(inputVersion)
     if (version != inputVersion) {
         println("bumped version locally from $inputVersion to $version")
+    }
+    try {
+        val destFile = File(args[1])
+        destFile.mkdirs()
+        listOf("version", "number").forEach { fileName ->
+            val file = File(destFile, fileName)
+            file.writeText(version.toString())
+        }
+    } catch (e: Exception) {
+        println("error writing to file: ${args[1]}")
+        e.printStackTrace()
     }
 }
 
