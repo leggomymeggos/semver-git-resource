@@ -1,4 +1,4 @@
-package com.github.leggomymeggos.semver_git_resource.check
+package com.github.leggomymeggos.semver_git_resource.driver
 
 import com.github.leggomymeggos.semver_git_resource.models.Source
 import com.github.leggomymeggos.semver_git_resource.models.getError

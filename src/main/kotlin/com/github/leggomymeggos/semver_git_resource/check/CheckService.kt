@@ -1,10 +1,11 @@
 package com.github.leggomymeggos.semver_git_resource.check
 
+import com.github.leggomymeggos.semver_git_resource.driver.DriverFactory
 import com.github.leggomymeggos.semver_git_resource.models.*
 import com.github.zafarkhaja.semver.Version as SemVer
 
-class Checker(private val driverFactory: DriverFactory) {
-    fun check(request: CheckRequest): Response<List<Version>, CheckError> {
+class CheckService(private val driverFactory: DriverFactory) {
+    fun check(request: CheckRequest): Response<List<Version>, VersionError> {
         var version: SemVer? = null
         if (request.version != null) {
             try {
@@ -28,14 +29,14 @@ class Checker(private val driverFactory: DriverFactory) {
                 }
     }
 
-    private fun handleDriverError(error: CheckError): Response.Error<CheckError> =
-            Response.Error(CheckError(
+    private fun handleDriverError(error: VersionError): Response.Error<VersionError> =
+            Response.Error(VersionError(
                     message = "error creating driver: ${error.message}",
                     exception = error.exception
             ))
 
-    private fun handleCheckingError(error: CheckError): Response.Error<CheckError> =
-            Response.Error(CheckError(
+    private fun handleCheckingError(error: VersionError): Response.Error<VersionError> =
+            Response.Error(VersionError(
                     message = "error checking version: ${error.message}",
                     exception = error.exception
             ))

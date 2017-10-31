@@ -1,7 +1,7 @@
-package com.github.leggomymeggos.semver_git_resource.check
+package com.github.leggomymeggos.semver_git_resource.client
 
-import com.github.leggomymeggos.semver_git_resource.models.CheckError
 import com.github.leggomymeggos.semver_git_resource.models.Response
+import com.github.leggomymeggos.semver_git_resource.models.VersionError
 import java.io.File
 
 class GitClient : BashClient {
@@ -13,7 +13,7 @@ class GitClient : BashClient {
         envMap.put(key, value)
     }
 
-    override fun execute(command: String): Response<String, CheckError> =
+    override fun execute(command: String): Response<String, VersionError> =
             try {
                 val processBuilder = ProcessBuilder(mutableListOf("/bin/sh", "-c", command))
                         .redirectOutput(LOGS_FILE)
@@ -23,10 +23,10 @@ class GitClient : BashClient {
 
                 Response.Success("Successfully executed command: $command")
             } catch (e: Exception) {
-                Response.Error(CheckError("Error executing command: $command", e))
+                Response.Error(VersionError("Error executing command: $command", e))
             }
 
-    private fun createFile(filePath: String, fileName: String) : File {
+    private fun createFile(filePath: String, fileName: String): File {
         val path = File(filePath)
         path.mkdirs()
         return File(path, fileName)

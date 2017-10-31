@@ -1,9 +1,8 @@
-package com.github.leggomymeggos.semver_git_resource.check
+package com.github.leggomymeggos.semver_git_resource.driver
 
-import com.github.leggomymeggos.semver_git_resource.models.CheckError
-import com.github.leggomymeggos.semver_git_resource.models.Response
-import com.github.leggomymeggos.semver_git_resource.models.flatMap
-import com.github.leggomymeggos.semver_git_resource.models.flatMapError
+import com.github.leggomymeggos.semver_git_resource.client.BashClient
+import com.github.leggomymeggos.semver_git_resource.client.GitClient
+import com.github.leggomymeggos.semver_git_resource.models.*
 import java.io.File
 import java.nio.file.Files
 import java.util.stream.Collectors
@@ -26,7 +25,7 @@ open class Driver(
     val gitRepoDir = Files.createTempDirectory("semver-git-repo")!!
     val privateKeyPath = File.createTempFile("tmp/private-key", ".txt")!!
 
-    open fun check(version: SemVer): Response<List<SemVer>, CheckError> =
+    open fun check(version: SemVer): Response<List<SemVer>, VersionError> =
             setUpUsernamePassword()
                     .flatMap {
                         setUpKey().flatMap {
@@ -44,29 +43,46 @@ open class Driver(
                         }
                     }.flatMapError { Response.Error(it) }
 
-    fun bump() {
-        setUpUsernamePassword().flatMap {
-            setUpKey().flatMap {
-                cloneOrFetchRepo()
-            }
-        }
+    open fun bump(bump: Bump): Response<SemVer, VersionError> {
+        return setUpUsernamePassword()
+                .flatMap {
+                    setUpKey().flatMap {
+                        cloneOrFetchRepo().flatMap {
+                            gitClient.execute("cd $gitRepoDir ; git reset --hard origin/$versionBranch").flatMap {
+                                readVersion().flatMap {
+                                    val newVersion = bump.apply(it)
+                                    val version = File(gitRepoDir.toAbsolutePath().toString(), versionFile)
+                                    version.writeText(newVersion.toString())
+                                    gitClient.execute(
+                                            "cd $gitRepoDir ; " +
+                                                    "git add $versionFile ; " +
+                                                    "git commit -m \"bumped version to $newVersion\" ; " +
+                                                    "git push origin $versionBranch")
+                                            .flatMap { Response.Success(newVersion) }
+                                            .flatMapError { Response.Error(VersionError("error with git: ${it.message}", it.exception)) }
+                                }
+                            }
+                        }
+                    }
+                }.flatMapError { Response.Error(it) }
     }
 
-    private fun readVersion(): Response<SemVer, CheckError> {
+
+    private fun readVersion(): Response<SemVer, VersionError> {
         val versionFile = File("$gitRepoDir/$versionFile")
         return if (versionFile.exists()) {
             val number = versionFile.readText().trim()
             try {
                 Response.Success(SemVer.valueOf(number))
             } catch (e: Exception) {
-                Response.Error(CheckError("Invalid version: $number", e))
+                Response.Error(VersionError("Invalid version: $number", e))
             }
         } else {
             Response.Success(initialVersion)
         }
     }
 
-    private fun cloneOrFetchRepo(): Response<String, CheckError> {
+    private fun cloneOrFetchRepo(): Response<String, VersionError> {
         val gitFiles = Files.list(gitRepoDir).collect(Collectors.toList())
 
         return if (!Files.exists(gitRepoDir) || gitFiles.isEmpty()) {
@@ -76,9 +92,9 @@ open class Driver(
         }
     }
 
-    private fun setUpKey(): Response<String, CheckError> {
+    private fun setUpKey(): Response<String, VersionError> {
         if (privateKey.contains("ENCRYPTED")) {
-            return Response.Error(CheckError("private keys with passphrases are not supported"))
+            return Response.Error(VersionError("private keys with passphrases are not supported"))
         }
 
         try {
@@ -86,13 +102,13 @@ open class Driver(
             privateKeyPath.writeText(privateKey)
             ProcessBuilder("/bin/sh", "-c", "chmod 600 $privateKeyPath").start().waitFor()
         } catch (e: Exception) {
-            return Response.Error(CheckError("error saving private key", e))
+            return Response.Error(VersionError("error saving private key", e))
         }
         gitClient.setEnv("GIT_SSH_COMMAND", "ssh -o StrictHostKeyChecking=no -i $privateKeyPath")
         return Response.Success("successfully saved private key")
     }
 
-    private fun setUpUsernamePassword(): Response<String, CheckError> {
+    private fun setUpUsernamePassword(): Response<String, VersionError> {
         return try {
             netRcFile.createNewFile()
             netRcFile.writeText("")
@@ -101,7 +117,7 @@ open class Driver(
             }
             return Response.Success("")
         } catch (e: Exception) {
-            Response.Error(CheckError("error saving username and password", e))
+            Response.Error(VersionError("error saving username and password", e))
         }
     }
 }

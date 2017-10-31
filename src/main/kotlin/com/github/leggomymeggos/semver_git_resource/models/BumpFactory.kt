@@ -2,8 +2,8 @@ package com.github.leggomymeggos.semver_git_resource.models
 
 import com.github.zafarkhaja.semver.Version as SemVer
 
-class BumpFactory {
-    fun create(bumpTarget: String, preReleaseTag: String): Bump {
+open class BumpFactory {
+    open fun create(bumpTarget: String, preReleaseTag: String): Bump {
         if(bumpTarget.isEmpty() && preReleaseTag.isNotEmpty()) {
             return PreReleaseBump(preReleaseTag)
         }

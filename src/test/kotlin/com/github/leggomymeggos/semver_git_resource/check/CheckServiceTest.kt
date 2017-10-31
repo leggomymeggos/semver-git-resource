@@ -1,5 +1,7 @@
 package com.github.leggomymeggos.semver_git_resource.check
 
+import com.github.leggomymeggos.semver_git_resource.driver.Driver
+import com.github.leggomymeggos.semver_git_resource.driver.DriverFactory
 import com.github.leggomymeggos.semver_git_resource.models.*
 import com.nhaarman.mockito_kotlin.any
 import com.nhaarman.mockito_kotlin.mock
@@ -12,10 +14,10 @@ import java.io.ByteArrayOutputStream
 import java.io.PrintStream
 import com.github.zafarkhaja.semver.Version as SemVer
 
-class CheckerTest {
+class CheckServiceTest {
     private val driver = mock<Driver>()
     private val driverFactory = mock<DriverFactory>()
-    private val checker = Checker(driverFactory)
+    private val checker = CheckService(driverFactory)
 
     @Before
     fun `set up`() {
@@ -34,7 +36,7 @@ class CheckerTest {
     @Test
     fun `returns an error when there is an error creating the driver`() {
         whenever(driverFactory.fromSource(any())).thenReturn(
-                Response.Error(CheckError("invalid version", Exception("bad driver")))
+                Response.Error(VersionError("invalid version", Exception("bad driver")))
         )
 
         val response = checker.check(createRequest()).getError()
@@ -89,7 +91,7 @@ class CheckerTest {
 
     @Test
     fun `returns an error if there is an unsuccessful check`() {
-        whenever(driver.check(any())).thenReturn(Response.Error(CheckError("did not check out", Exception("something rull bad happen"))))
+        whenever(driver.check(any())).thenReturn(Response.Error(VersionError("did not check out", Exception("something rull bad happen"))))
 
         val response = checker.check(createRequest()).getError()
 

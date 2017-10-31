@@ -3,9 +3,7 @@ package com.github.leggomymeggos.semver_git_resource.out
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.PropertyNamingStrategy
 import com.fasterxml.jackson.module.kotlin.readValue
-import com.github.leggomymeggos.semver_git_resource.check.DriverFactoryImpl
-import com.github.leggomymeggos.semver_git_resource.models.OutRequest
-import com.github.leggomymeggos.semver_git_resource.models.getSuccess
+import com.github.leggomymeggos.semver_git_resource.models.*
 import java.io.BufferedReader
 import java.io.InputStreamReader
 
@@ -18,6 +16,9 @@ fun main(args: Array<String>) {
 
     val request = mapper.readValue<OutRequest>(reader.readLines().joinToString())
 
-    val driver = DriverFactoryImpl().fromSource(request.source).getSuccess()
-    driver.bump()
+    val service = OutService()
+    val response: Response<Version, VersionError> = service.writeVersion(request)
+    val outResponse = OutResponse(version = response.getSuccess(), metadata = emptyList())
+
+    println(mapper.writeValueAsString(outResponse))
 }

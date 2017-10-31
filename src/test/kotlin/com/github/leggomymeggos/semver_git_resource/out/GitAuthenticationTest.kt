@@ -2,10 +2,8 @@ package com.github.leggomymeggos.semver_git_resource.out
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.PropertyNamingStrategy
-import com.github.leggomymeggos.semver_git_resource.models.OutRequest
-import com.github.leggomymeggos.semver_git_resource.models.Source
-import com.github.leggomymeggos.semver_git_resource.models.Version
-import com.github.leggomymeggos.semver_git_resource.models.VersionParams
+import com.fasterxml.jackson.module.kotlin.readValue
+import com.github.leggomymeggos.semver_git_resource.models.*
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.After
 import org.junit.Before
@@ -53,7 +51,7 @@ class GitAuthenticationTest {
     fun `can authenticate with ssh`() {
         OutRequest(
                 version = Version(number = "1.4.3", ref = ""),
-                params = VersionParams(),
+                params = VersionParams(pre = "pre"),
                 source = Source(
                         versionFile = VERSION_FILE,
                         versionBranch = VERSION_BRANCH,
@@ -63,23 +61,16 @@ class GitAuthenticationTest {
         ).writeToStdIn()
         main(arrayOf())
 
-        val cloneText = File("./src/main/logs/git_error.txt").readText() // git emits cloning as an error
-        val gitRepo = cloneText.substringAfter("'").split("'").first()
-
-        ProcessBuilder("/bin/sh", "-c", "cd $gitRepo ; git remote -v")
-                .redirectOutput(createFile("$LOGS_DIR/ssh/", "success.txt"))
-                .redirectError(createFile("$LOGS_DIR/ssh/", "error.txt"))
-                .start()
-                .waitFor()
-
-        assertThat(File("$LOGS_DIR/ssh/success.txt").readText()).contains(PROPERTIES["git.ssh.url"]!!)
+        val jsonResult = outputStream.toString()
+        val result: OutResponse = mapper.readValue(jsonResult.substring(jsonResult.indexOf("{"), jsonResult.lastIndexOf("\n")))
+        assertThat(result.version.number).containsPattern("0.0.(\\d+)-pre.(\\d+)") // if this didn't bump the number in the file on gitlab, it is at least read from the file
     }
 
     @Test
     fun `can authenticate with https`() {
         OutRequest(
                 version = Version(number = "3.5.3", ref = ""),
-                params = VersionParams(),
+                params = VersionParams(pre = "pre"),
                 source = Source(
                         versionFile = VERSION_FILE,
                         versionBranch = VERSION_BRANCH,
@@ -90,16 +81,9 @@ class GitAuthenticationTest {
         ).writeToStdIn()
         main(arrayOf())
 
-        val cloneText = File("./src/main/logs/git_error.txt").readText() // git emits cloning as an error
-        val gitRepo = cloneText.substringAfter("'").split("'").first()
-
-        ProcessBuilder("/bin/sh", "-c", "cd $gitRepo ; git remote -v")
-                .redirectOutput(createFile("$LOGS_DIR/https/", "success.txt"))
-                .redirectError(createFile("$LOGS_DIR/https/", "error.txt"))
-                .start()
-                .waitFor()
-
-        assertThat(File("$LOGS_DIR/https/success.txt").readText()).contains(PROPERTIES["git.https.url"]!!)
+        val jsonResult = outputStream.toString()
+        val result: OutResponse = mapper.readValue(jsonResult.substring(jsonResult.indexOf("{"), jsonResult.lastIndexOf("\n")))
+        assertThat(result.version.number).matches("0.0.(\\d+)-pre.(\\d+)") // if this didn't bump the number in the file on gitlab, it is at least read from the file
     }
 
     private fun OutRequest.writeToStdIn() {

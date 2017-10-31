@@ -42,6 +42,11 @@ data class OutRequest(
         @JsonProperty("params")  val params:  VersionParams
 )
 
+data class OutResponse(
+        @JsonProperty("version") val version: Version,
+        @JsonProperty("metadata") val metadata: List<MetadataField>
+)
+
 data class MetadataField(
         @JsonProperty("name")  val name:  String,
         @JsonProperty("value") val value: String
@@ -52,4 +57,4 @@ data class VersionParams(
         @JsonProperty("pre")  val pre:  String = ""
 )
 
-data class CheckError(val message: String, val exception: Exception? = null)
+data class VersionError(val message: String, val exception: Exception? = null)
