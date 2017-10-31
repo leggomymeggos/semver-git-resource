@@ -64,7 +64,7 @@ class GitAuthenticationTest {
         val jsonResult = outputStream.toString()
         val result: List<Version> = mapper.readValue(jsonResult.substring(jsonResult.indexOf("["), jsonResult.lastIndexOf("\n")))
 
-        assertThat(result[0].number).containsPattern("0.0.(\\d+)-pre.(\\d+)") // the number in the version file
+        assertThat(result[0].number).containsPattern("0.0.3-pre.(\\d+)") // the number in the version file
     }
 
     @Test
@@ -84,7 +84,7 @@ class GitAuthenticationTest {
         val jsonResult = outputStream.toString()
         val result: List<Version> = mapper.readValue(jsonResult.substring(jsonResult.indexOf("["), jsonResult.lastIndexOf("\n")))
 
-        assertThat(result[0].number).containsPattern("0.0.(\\d+)-pre.(\\d+)") // the number in the version file
+        assertThat(result[0].number).containsPattern("0.0.3-pre.(\\d+)") // the number in the version file
     }
 
     private fun CheckRequest.writeToStdIn() {

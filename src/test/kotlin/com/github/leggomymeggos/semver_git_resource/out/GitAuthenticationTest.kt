@@ -63,7 +63,7 @@ class GitAuthenticationTest {
 
         val jsonResult = outputStream.toString()
         val result: OutResponse = mapper.readValue(jsonResult.substring(jsonResult.indexOf("{"), jsonResult.lastIndexOf("\n")))
-        assertThat(result.version.number).containsPattern("0.0.(\\d+)-pre.(\\d+)") // if this didn't bump the number in the file on gitlab, it is at least read from the file
+        assertThat(result.version.number).containsPattern("0.0.3-pre.(\\d+)") // if this didn't bump the number in the file on gitlab, it is at least read from the file
     }
 
     @Test
@@ -83,7 +83,7 @@ class GitAuthenticationTest {
 
         val jsonResult = outputStream.toString()
         val result: OutResponse = mapper.readValue(jsonResult.substring(jsonResult.indexOf("{"), jsonResult.lastIndexOf("\n")))
-        assertThat(result.version.number).matches("0.0.(\\d+)-pre.(\\d+)") // if this didn't bump the number in the file on gitlab, it is at least read from the file
+        assertThat(result.version.number).matches("0.0.3-pre.(\\d+)") // if this didn't bump the number in the file on gitlab, it is at least read from the file
     }
 
     private fun OutRequest.writeToStdIn() {
