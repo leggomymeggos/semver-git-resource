@@ -23,7 +23,6 @@ class GitAuthenticationTest {
     private val outputStream = ByteArrayOutputStream()
 
     private val PROPERTIES = loadProperties()
-    private val LOGS_DIR = "./src/test/logs/out"
 
     private fun loadProperties(): Map<String, String> =
             File("./src/test/resources/secret.properties").readText()

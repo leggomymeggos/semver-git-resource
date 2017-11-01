@@ -9,7 +9,7 @@ import java.util.*
 import com.github.zafarkhaja.semver.Version as SemVer
 
 class DriverFactoryImplTest {
-    val factory = DriverFactoryImpl()
+    private val factory = DriverFactoryImpl()
 
     @Test
     fun `returns error if initial version is invalid`() {

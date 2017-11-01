@@ -21,14 +21,20 @@ class GitClient : BashClient {
                 processBuilder.environment().putAll(envMap)
                 processBuilder.start().waitFor()
 
-                Response.Success("Successfully executed command: $command")
+                Response.Success(getLogs())
             } catch (e: Exception) {
-                Response.Error(VersionError("Error executing command: $command", e))
+                Response.Error(VersionError(getLogs(), e))
             }
 
     private fun createFile(filePath: String, fileName: String): File {
         val path = File(filePath)
         path.mkdirs()
         return File(path, fileName)
+    }
+
+    private fun getLogs() : String {
+        val logs = LOGS_FILE.readLines().toMutableList()
+        logs.addAll(ERROR_FILE.readLines())
+        return logs.joinToString("\n")
     }
 }
