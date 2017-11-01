@@ -2,10 +2,8 @@ package com.github.leggomymeggos.semver_git_resource.out
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.PropertyNamingStrategy
-import com.github.leggomymeggos.semver_git_resource.models.OutRequest
-import com.github.leggomymeggos.semver_git_resource.models.Source
-import com.github.leggomymeggos.semver_git_resource.models.Version
-import com.github.leggomymeggos.semver_git_resource.models.VersionParams
+import com.fasterxml.jackson.module.kotlin.readValue
+import com.github.leggomymeggos.semver_git_resource.models.*
 import khttp.post
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.*
@@ -194,6 +192,25 @@ class OutIntegrationTest {
         pullDownGitRepo()
 
         assertThat(File("${tempDir.path}/${gitUrl.repoName()}/$VERSION_FILE").readText()).contains("1.2.3")
+    }
+
+    @Test
+    fun `prints version and metadata`() {
+        addVersionFile("1.2.3-rc.1")
+        OutRequest(
+                version = Version(number = "1.2.3", ref = ""),
+                params = VersionParams(bump = "final"),
+                source = baseSource()
+        ).writeToStdIn()
+
+        main(arrayOf())
+
+        val jsonResult = outputStream.toString().substring(outputStream.toString().indexOfFirst { it.toString() == "{" }, outputStream.toString().lastIndexOf("}") + 1)
+        val response = mapper.readValue<OutResponse>(jsonResult)
+
+        assertThat(response.version.number).isEqualTo("1.2.3")
+        assertThat(response.metadata.first().name).isEqualTo("number")
+        assertThat(response.metadata.first().value).isEqualTo("1.2.3")
     }
 
     private fun refreshGitUrl(): String {

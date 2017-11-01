@@ -8,7 +8,7 @@ class OutService(
         private val driverFactory: DriverFactory = DriverFactoryImpl(),
         private val bumpFactory: BumpFactory = BumpFactory()
 ) {
-    fun writeVersion(request: OutRequest): Response<Version, VersionError> {
+    fun writeVersion(request: OutRequest): Response<OutResponse, VersionError> {
         return driverFactory.fromSource(request.source)
                 .flatMapError { Response.Error(VersionError("error creating driver: ${it.message}", it.exception)) }
                 .flatMap { driver ->
@@ -16,7 +16,10 @@ class OutService(
                     driver.bump(bump)
                             .flatMapError { Response.Error(VersionError("error bumping version: ${it.message}", it.exception)) }
                             .flatMap { version ->
-                                Response.Success(Version(number = version.toString(), ref = ""))
+                                Response.Success(OutResponse(
+                                        version = Version(number = version.toString(), ref = ""),
+                                        metadata = listOf(MetadataField(name = "number", value = version.toString()))
+                                ))
                             }
                 }
     }

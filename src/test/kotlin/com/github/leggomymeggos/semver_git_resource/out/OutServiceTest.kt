@@ -91,7 +91,7 @@ class OutServiceTest {
         )
         val response = service.writeVersion(request).getSuccess()
 
-        assertThat(response.number).isEqualTo("1.2.3")
+        assertThat(response.version.number).isEqualTo("1.2.3")
     }
 
     @Test
