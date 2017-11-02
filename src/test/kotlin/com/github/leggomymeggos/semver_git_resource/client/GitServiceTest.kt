@@ -2,6 +2,8 @@ package com.github.leggomymeggos.semver_git_resource.client
 
 import com.github.leggomymeggos.semver_git_resource.models.Response
 import com.github.leggomymeggos.semver_git_resource.models.VersionError
+import com.github.leggomymeggos.semver_git_resource.models.getError
+import com.github.leggomymeggos.semver_git_resource.models.getSuccess
 import com.nhaarman.mockito_kotlin.*
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Before
@@ -210,5 +212,30 @@ class GitServiceTest {
         val response = service.push("version")
 
         assertThat(response).isEqualTo(success)
+    }
+
+    @Test
+    fun `commitsSince asks for the commits`() {
+        service.commitsSince("abc123")
+
+        verify(client).execute("cd ${service.gitRepoDir} ; git log --pretty=format:'%H'")
+    }
+
+    @Test
+    fun `commitsSince returns the most recent commit`() {
+        whenever(client.execute(any())).thenReturn(Response.Success("commit3\ncommit2\ncommit1"))
+
+        val response = service.commitsSince("abc123").getSuccess()
+
+        assertThat(response).containsExactly("commit3")
+    }
+
+    @Test
+    fun `commitsSince returns an error if there is an error with git`() {
+        whenever(client.execute(any())).thenReturn(Response.Error(VersionError("error")))
+
+        val response = service.commitsSince("abc123").getError()
+
+        assertThat(response.message).isEqualTo("error")
     }
 }

@@ -37,90 +37,6 @@ class DriverFactoryImplTest {
     }
 
     @Test
-    fun `returns error if private key, username, and password are all null`() {
-        val source = createSource(privateKey = null, username = null, password = null)
-        val response = factory.fromSource(source).getError()
-
-        assertThat(response.message).isEqualTo("missing git credentials. set a username and password or a private key")
-        assertThat(response.exception).isNull()
-    }
-
-    @Test
-    fun `returns error if private key, username, and password are all empty`() {
-        val source = createSource(privateKey = "", username = "", password = "")
-        val response = factory.fromSource(source).getError()
-
-        assertThat(response.message).isEqualTo("missing git credentials. set a username and password or a private key")
-        assertThat(response.exception).isNull()
-    }
-
-    @Test
-    fun `returns error if username is set but password is null`() {
-        val source = createSource(privateKey = "", username = "user user", password = null)
-        val response = factory.fromSource(source).getError()
-
-        assertThat(response.message).isEqualTo("missing git credentials. set a username and password or a private key")
-        assertThat(response.exception).isNull()
-    }
-
-    @Test
-    fun `returns error if password is set but username is null`() {
-        val source = createSource(privateKey = "", username = null, password = "super pass")
-        val response = factory.fromSource(source).getError()
-
-        assertThat(response.message).isEqualTo("missing git credentials. set a username and password or a private key")
-        assertThat(response.exception).isNull()
-    }
-
-    @Test
-    fun `returns error if username is set but password is empty`() {
-        val source = createSource(privateKey = "", username = "super user", password = "")
-        val response = factory.fromSource(source).getError()
-
-        assertThat(response.message).isEqualTo("missing git credentials. set a username and password or a private key")
-        assertThat(response.exception).isNull()
-    }
-
-    @Test
-    fun `returns error if password is set but username is empty`() {
-        val source = createSource(privateKey = "", username = "", password = "souperSeekrit123")
-        val response = factory.fromSource(source).getError()
-
-        assertThat(response.message).isEqualTo("missing git credentials. set a username and password or a private key")
-        assertThat(response.exception).isNull()
-    }
-
-    @Test
-    fun `sets empty or null username and password when private key is set`() {
-        val source = createSource(privateKey = "such a gr8 key", username = "", password = null)
-        val response = factory.fromSource(source).getSuccess()
-
-        assertThat(response.privateKey).isEqualTo("such a gr8 key")
-        assertThat(response.username).isEqualTo("")
-        assertThat(response.password).isEqualTo("")
-    }
-
-    @Test
-    fun `allows empty private key when username and password are set`() {
-        val source = createSource(privateKey = "", username = "user1", password = "password1")
-        val response = factory.fromSource(source).getSuccess()
-
-        assertThat(response.privateKey).isEqualTo("")
-        assertThat(response.username).isEqualTo("user1")
-        assertThat(response.password).isEqualTo("password1")
-    }
-
-    @Test
-    fun `allows null private key when username and password are set`() {
-        val source = createSource(privateKey = null, username = "user1", password = "password1")
-        val response = factory.fromSource(source).getSuccess()
-
-        assertThat(response.privateKey).isEqualTo("")
-        assertThat(response.username).isEqualTo("user1")
-        assertThat(response.password).isEqualTo("password1")
-    }
-
-    @Test
     fun `sets git url`() {
         val source = createSource(uri = "git@git.git:repo/path")
         val response = factory.fromSource(source).getSuccess()
@@ -179,18 +95,18 @@ class DriverFactoryImplTest {
 
     @Test
     fun `sets tag filter`() {
-        val source = createSource(tagFilter = "the tagos")
+        val source = createSource(tagFilter = "the tag-os")
         val response = factory.fromSource(source).getSuccess()
 
-        assertThat(response.tagFilter).isEqualTo("the tagos")
+        assertThat(response.tagFilter).isEqualTo("the tag-os")
     }
 
     private fun createSource(
             uri: String = "",
             versionFile: String = "",
-            privateKey: String? = "so private",
-            username: String? = "such user",
-            password: String? = "much secret",
+            privateKey: String = "so private",
+            username: String = "such user",
+            password: String = "much secret",
             tagFilter: String? = null,
             skipSslVerification: Boolean? = null,
             sourceCodeBranch: String? = null,

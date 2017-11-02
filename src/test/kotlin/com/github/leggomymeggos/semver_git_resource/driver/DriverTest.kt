@@ -14,9 +14,6 @@ class DriverTest {
     private val gitService = mock<GitService>()
     private val driver = Driver(
             gitUri = "http://example.com/",
-            privateKey = "private",
-            username = "user123",
-            password = "password456",
             tagFilter = "",
             skipSslVerification = false,
             sourceCodeBranch = "masterBranch",
@@ -46,272 +43,112 @@ class DriverTest {
     }
 
     @Test
-    fun `check clears netrc file if it exists`() {
-        val netRc = File(System.getenv("HOME"), ".netrc")
-        netRc.createNewFile()
-        netRc.writeText("hey yeah here i am")
-
-        driver.check(asVersion("0.0.0"))
-
-        assertThat(netRc.readText()).doesNotContain("hey yeah here i am")
-    }
-
-    @Test
-    fun `check creates netrc file with git username and password`() {
-        val netRc = File(System.getenv("HOME"), ".netrc")
-
-        driver.check(asVersion("0.0.0"))
-
-        assertThat(netRc.exists()).isTrue()
-        assertThat(netRc.readText()).isEqualTo("default login user123 password password456")
-    }
-
-    @Test
-    fun `check does not save new netrc file if username and password are empty`() {
-        val netRc = File(System.getenv("HOME"), ".netrc")
-        netRc.createNewFile()
-        netRc.writeText("hey yeah here i am")
-
-        val driver = Driver(
-                gitUri = "http://example.com/",
-                privateKey = "private",
-                username = "",
-                password = "",
-                tagFilter = "",
-                skipSslVerification = false,
-                sourceCodeBranch = "masterBranch",
-                versionBranch = "versionBranch",
-                versionFile = "versiony",
-                initialVersion = asVersion("7.80.34"),
-                gitService = gitService
-        )
-
-        driver.check(asVersion("0.0.0"))
-
-        assertThat(netRc.readText()).isEmpty()
-    }
-
-    @Test
-    fun `check does not support encrypted keys`() {
-        val driver = Driver(
-                gitUri = "http://example.com/",
-                privateKey = "privateENCRYPTED",
-                username = "user123",
-                password = "password456",
-                tagFilter = "",
-                skipSslVerification = false,
-                sourceCodeBranch = "masterBranch",
-                versionBranch = "versionBranch",
-                versionFile = "versiony",
-                initialVersion = asVersion("7.80.34"),
-                gitService = gitService
-        )
-        val response = driver.check(asVersion("0.0.0")).getError()
-
-        assertThat(response.message).isEqualTo("private keys with passphrases are not supported")
-    }
-
-    @Test
-    fun `check saves private key`() {
-        driver.check(asVersion("0.0.0"))
-
-        assertThat(driver.privateKeyPath.readText()).isEqualTo(driver.privateKey)
-    }
-
-    @Test
-    fun `check exports private key`() {
-        driver.check(asVersion("0.0.0"))
-
-        verify(gitService).setEnv("GIT_SSH_COMMAND", "ssh -o StrictHostKeyChecking=no -i ${driver.privateKeyPath}")
-    }
-
-    @Test
-    fun `check clones the git repo`() {
-        driver.check(asVersion("0.0.0"))
+    fun `checkVersion clones the git repo`() {
+        driver.checkVersion(asVersion("0.0.0"))
 
         verify(gitService).cloneOrFetch(driver.gitUri, driver.versionBranch)
     }
 
     @Test
-    fun `check returns an error when something goes wrong cloning the repo`() {
+    fun `checkVersion returns an error when something goes wrong cloning the repo`() {
         val exception = Exception("fuuuuq")
         whenever(gitService.cloneOrFetch(any(), any()))
                 .thenReturn(Response.Error(VersionError("something done fucked up yo", exception)))
 
-        val response = driver.check(asVersion("0.0.0")).getError()
+        val response = driver.checkVersion(asVersion("0.0.0")).getError()
 
         assertThat(response.message).isEqualTo("something done fucked up yo")
         assertThat(response.exception).isEqualTo(exception)
     }
 
     @Test
-    fun `check resets repo to head of version branch`() {
+    fun `checkVersion resets repo to head of version branch`() {
         whenever(gitService.cloneOrFetch(any(), any()))
                 .thenReturn(Response.Success("successfully ran the thing"))
 
-        driver.check(asVersion("0.0.0"))
+        driver.checkVersion(asVersion("0.0.0"))
 
         verify(gitService).resetRepoDir(driver.versionBranch)
     }
 
     @Test
-    fun `check returns an error when there is a problem resetting the repo`() {
+    fun `checkVersion returns an error when there is a problem resetting the repo`() {
         whenever(gitService.resetRepoDir(any()))
                 .thenReturn(Response.Error(VersionError("did not do it!!!!")))
 
-        val response = driver.check(asVersion("0.0.0")).getError()
+        val response = driver.checkVersion(asVersion("0.0.0")).getError()
 
         assertThat(response).isEqualTo(VersionError("did not do it!!!!"))
     }
 
     @Test
-    fun `check asks for version file`() {
-        driver.check(asVersion("0.0.0"))
+    fun `checkVersion asks for version file`() {
+        driver.checkVersion(asVersion("0.0.0"))
 
         verify(gitService).getFile(driver.versionFile)
     }
 
     @Test
-    fun `check reads the version from the given file`() {
+    fun `checkVersion reads the version from the given file`() {
         val versionFile = File.createTempFile("version", "")
         versionFile.createNewFile()
         versionFile.writeText("1.2.3")
         whenever(gitService.getFile(any())).thenReturn(versionFile)
 
-        val response = driver.check(asVersion("0.0.0")).getSuccess()
+        val response = driver.checkVersion(asVersion("0.0.0")).getSuccess()
 
-        assertThat(response).containsExactly(asVersion("1.2.3"))
+        assertThat(response).isEqualTo("1.2.3")
     }
 
     @Test
-    fun `check trims the version from the file`() {
+    fun `checkVersion trims the version from the file`() {
         val versionFile = File.createTempFile("version", "")
         versionFile.createNewFile()
         versionFile.writeText("\n\n 1.2.3   \n ")
         whenever(gitService.getFile(any())).thenReturn(versionFile)
 
-        val response = driver.check(asVersion("0.0.0")).getSuccess()
+        val response = driver.checkVersion(asVersion("0.0.0")).getSuccess()
 
-        assertThat(response).containsExactly(asVersion("1.2.3"))
+        assertThat(response).isEqualTo("1.2.3")
     }
 
     @Test
-    fun `check returns an error if the saved version is not valid`() {
+    fun `checkVersion returns an error if the saved version is not valid`() {
         val versionFile = File.createTempFile("version", "")
         versionFile.createNewFile()
         versionFile.writeText("not valid yo")
         whenever(gitService.getFile(any())).thenReturn(versionFile)
 
-        val response = driver.check(asVersion("0.0.0")).getError()
+        val response = driver.checkVersion(asVersion("0.0.0")).getError()
 
         assertThat(response.message).isEqualTo("Invalid version: not valid yo")
         assertThat(response.exception).isNotNull()
     }
 
     @Test
-    fun `check returns the initial version if the version file does not exist`() {
-        val response = driver.check(asVersion("0.0.0")).getSuccess()
+    fun `checkVersion returns the initial version if the version file does not exist`() {
+        val response = driver.checkVersion(asVersion("0.0.0")).getSuccess()
 
-        assertThat(response).containsExactly(asVersion("7.80.34"))
+        assertThat(response).isEqualTo("7.80.34")
     }
 
     @Test
-    fun `check returns empty list when the passed-in version is greater than the driver initial version`() {
-        val response = driver.check(asVersion("8.0.0")).getSuccess()
+    fun `checkVersion returns empty list when the passed-in version is greater than the driver initial version`() {
+        val response = driver.checkVersion(asVersion("8.0.0")).getSuccess()
 
         assertThat(response).isEmpty()
     }
 
     @Test
-    fun `check returns empty list when the passed-in version is greater than the saved version in the file`() {
+    fun `checkVersion returns empty list when the passed-in version is greater than the saved version in the file`() {
         val versionFile = File.createTempFile("version", "")
         versionFile.createNewFile()
         versionFile.writeText("1.2.3")
         whenever(gitService.getFile(any())).thenReturn(versionFile)
 
-        val response = driver.check(asVersion("4.0.0")).getSuccess()
+        val response = driver.checkVersion(asVersion("4.0.0")).getSuccess()
 
         assertThat(response).isEmpty()
-    }
-
-    @Test
-    fun `bump clears netrc file if it exists`() {
-        val netRc = File(System.getenv("HOME"), ".netrc")
-        netRc.createNewFile()
-        netRc.writeText("hey yeah here i am")
-
-        driver.bump(PatchBump())
-
-        assertThat(netRc.readText()).doesNotContain("hey yeah here i am")
-    }
-
-    @Test
-    fun `bump creates netrc file with git username and password`() {
-        val netRc = File(System.getenv("HOME"), ".netrc")
-
-        driver.bump(MajorBump())
-
-        assertThat(netRc.exists()).isTrue()
-        assertThat(netRc.readText()).isEqualTo("default login user123 password password456")
-    }
-
-    @Test
-    fun `bump does not save new netrc file if username and password are empty`() {
-        val netRc = File(System.getenv("HOME"), ".netrc")
-        netRc.createNewFile()
-        netRc.writeText("hey yeah here i am")
-
-        val driver = Driver(
-                gitUri = "http://example.com/",
-                privateKey = "private",
-                username = "",
-                password = "",
-                tagFilter = "",
-                skipSslVerification = false,
-                sourceCodeBranch = "masterBranch",
-                versionBranch = "versionBranch",
-                versionFile = "versiony",
-                initialVersion = asVersion("7.80.34"),
-                gitService = gitService
-        )
-
-        driver.bump(MinorBump())
-
-        assertThat(netRc.readText()).isEmpty()
-    }
-
-    @Test
-    fun `bump does not support encrypted keys`() {
-        val driver = Driver(
-                gitUri = "http://example.com/",
-                privateKey = "privateENCRYPTED",
-                username = "user123",
-                password = "password456",
-                tagFilter = "",
-                skipSslVerification = false,
-                sourceCodeBranch = "masterBranch",
-                versionBranch = "versionBranch",
-                versionFile = "versiony",
-                initialVersion = asVersion("7.80.34"),
-                gitService = gitService
-        )
-        val response = driver.bump(FinalBump()).getError()
-
-        assertThat(response.message).isEqualTo("private keys with passphrases are not supported")
-    }
-
-    @Test
-    fun `bump saves private key`() {
-        driver.bump(FinalBump())
-
-        assertThat(driver.privateKeyPath.readText()).isEqualTo(driver.privateKey)
-    }
-
-    @Test
-    fun `bump exports private key`() {
-        driver.bump(MajorBump())
-
-        verify(gitService).setEnv("GIT_SSH_COMMAND", "ssh -o StrictHostKeyChecking=no -i ${driver.privateKeyPath}")
     }
 
     @Test
@@ -448,15 +285,15 @@ class DriverTest {
 
         verify(gitService).push(driver.versionBranch)
     }
-    
-    @Test 
+
+    @Test
     fun `bump returns success with the new version when the push is successful`() {
         whenever(gitService.push(any())).thenReturn(Response.Success("pushed!"))
         val bump = object : Bump {
             override fun apply(version: SemVer): SemVer = asVersion("100.200.300")
         }
         val response = driver.bump(bump).getSuccess()
-        
+
         assertThat(response).isEqualTo(asVersion("100.200.300"))
     }
 
@@ -499,5 +336,63 @@ class DriverTest {
         val response = driver.bump(FinalBump()).getSuccess()
 
         assertThat(response).isEqualTo(asVersion("7.80.34"))
+    }
+
+    @Test
+    fun `checkRefs clones the repo for the source code branch`() {
+        driver.checkRefs("abc123")
+
+        verify(gitService).cloneOrFetch(driver.gitUri, driver.sourceCodeBranch)
+    }
+
+    @Test
+    fun `checkRefs returns an error if there is a problem cloning`() {
+        whenever(gitService.cloneOrFetch(any(), any())).thenReturn(Response.Error(VersionError("did not do it")))
+
+        val response = driver.checkRefs("abc123").getError()
+
+        assertThat(response.message).isEqualTo("did not do it")
+    }
+
+    @Test
+    fun `checkRefs resets repo to source code branch`() {
+        driver.checkRefs("abc123")
+
+        verify(gitService).resetRepoDir(driver.sourceCodeBranch)
+    }
+
+    @Test
+    fun `checkRefs returns an error if there is a problem resetting the repo`() {
+        whenever(gitService.resetRepoDir(any())).thenReturn(Response.Error(VersionError("problem time")))
+
+        val response = driver.checkRefs("abc123").getError()
+
+        assertThat(response.message).isEqualTo("problem time")
+    }
+
+    @Test
+    fun `checkRefs gets the commits since the most recent version`() {
+        driver.checkRefs("abc123")
+
+        verify(gitService).commitsSince("abc123")
+    }
+
+    @Test
+    fun `checkRefs returns an error if there is an error getting the refs`() {
+        whenever(gitService.commitsSince(any())).thenReturn(Response.Error(VersionError("problem time")))
+
+        val response = driver.checkRefs("abc123").getError()
+
+        assertThat(response.message).isEqualTo("problem time")
+    }
+
+    @Test
+    fun `checkRefs returns list of commits since most recent version`() {
+        val commits = listOf("commit1", "commit2")
+        whenever(gitService.commitsSince(any())).thenReturn(Response.Success(commits))
+
+        val response = driver.checkRefs("abc123").getSuccess()
+
+        assertThat(response).isEqualTo(commits)
     }
 }

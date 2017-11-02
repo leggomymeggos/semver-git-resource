@@ -10,14 +10,14 @@ data class Version(
 data class Source(
         @JsonProperty("uri")                   val uri:                 String,
         @JsonProperty("version_file")          val versionFile:         String,
-        @JsonProperty("private_key")           val privateKey:          String? = null,
-        @JsonProperty("username")              val username:            String? = null,
-        @JsonProperty("password")              val password:            String? = null,
-        @JsonProperty("tag_filter")            val tagFilter:           String? = null,
+        @JsonProperty("private_key")           val privateKey:          String   = "",
+        @JsonProperty("username")              val username:            String   = "",
+        @JsonProperty("password")              val password:            String   = "",
+        @JsonProperty("tag_filter")            val tagFilter:           String?  = null,
         @JsonProperty("skip_ssl_verification") val skipSslVerification: Boolean? = null,
-        @JsonProperty("source_code_branch")    val sourceCodeBranch:    String? = null,
-        @JsonProperty("version_branch")        val versionBranch:       String? = null,
-        @JsonProperty("initial_version")       val initialVersion:      String? = null
+        @JsonProperty("source_code_branch")    val sourceCodeBranch:    String?  = null,
+        @JsonProperty("version_branch")        val versionBranch:       String?  = null,
+        @JsonProperty("initial_version")       val initialVersion:      String?  = null
 )
 
 data class CheckRequest(

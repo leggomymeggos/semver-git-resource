@@ -75,8 +75,8 @@ class GitAuthenticationTest {
                         versionFile = VERSION_FILE,
                         versionBranch = VERSION_BRANCH,
                         uri = PROPERTIES["git.https.url"]!!,
-                        username = PROPERTIES["git.username"],
-                        password = PROPERTIES["git.password"]
+                        username = PROPERTIES["git.username"]!!,
+                        password = PROPERTIES["git.password"]!!
                 )
         ).writeToStdIn()
         main(arrayOf())

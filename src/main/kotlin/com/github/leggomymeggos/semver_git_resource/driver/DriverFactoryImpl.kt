@@ -18,28 +18,14 @@ class DriverFactoryImpl : DriverFactory {
             SemVer.valueOf("0.0.0")
         }
 
-        if (source.hasMissingCredentials()) {
-            return Response.Error(VersionError("missing git credentials. set a username and password or a private key"))
-        }
-
         return Response.Success(Driver(
                 gitUri = source.uri,
                 initialVersion = version,
-                privateKey = source.privateKey ?: "",
-                username = source.username ?: "",
-                password = source.password ?: "",
                 tagFilter = source.tagFilter ?: "",
                 skipSslVerification = source.skipSslVerification?.equals(true) ?: false,
                 sourceCodeBranch = source.sourceCodeBranch ?: "master",
                 versionBranch = source.versionBranch ?: "version",
                 versionFile = source.versionFile
         ))
-    }
-
-    private fun Source.hasMissingCredentials(): Boolean {
-        if (privateKey.isNullOrEmpty()) {
-            return (username.isNullOrEmpty() || password.isNullOrEmpty())
-        }
-        return false
     }
 }

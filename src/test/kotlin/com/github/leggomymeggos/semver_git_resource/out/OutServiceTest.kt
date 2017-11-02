@@ -1,5 +1,6 @@
 package com.github.leggomymeggos.semver_git_resource.out
 
+import com.github.leggomymeggos.semver_git_resource.client.EnvironmentService
 import com.github.leggomymeggos.semver_git_resource.driver.Driver
 import com.github.leggomymeggos.semver_git_resource.driver.DriverFactory
 import com.github.leggomymeggos.semver_git_resource.models.*
@@ -16,14 +17,47 @@ class OutServiceTest {
     private val driver = mock<Driver>()
     private val driverFactory = mock<DriverFactory>()
     private val bumpFactory = mock<BumpFactory>()
-    private val service = OutService(driverFactory, bumpFactory)
+    private val envService = mock<EnvironmentService>()
+    private val service = OutService(driverFactory, bumpFactory, envService)
 
     @Before
     fun `set up`() {
-        whenever(driverFactory.fromSource(any())).thenReturn(Response.Success(driver))
-        val bump = mock<Bump>()
-        whenever(bumpFactory.create(any(), any())).thenReturn(bump)
+        whenever(envService.setUpEnv(any())).thenReturn(Response.Success("went well"))
         whenever(driver.bump(any())).thenReturn(Response.Success(SemVer.valueOf("0.0.0")))
+        whenever(driverFactory.fromSource(any())).thenReturn(Response.Success(driver))
+        whenever(bumpFactory.create(any(), any())).thenReturn(mock())
+    }
+
+    @Test
+    fun `sets up environment`() {
+        val request = OutRequest(
+                version = Version("1.2.3", ""),
+                source = Source(
+                        uri = "",
+                        versionFile = "version"
+                ),
+                params = VersionParams("", "")
+        )
+        service.writeVersion(request)
+
+        verify(envService).setUpEnv(request.source)
+    }
+
+    @Test
+    fun `returns an error if there is a set up error`() {
+        whenever(envService.setUpEnv(any())).thenReturn(Response.Error(VersionError("something is not right")))
+
+        val request = OutRequest(
+                version = Version("1.2.3", ""),
+                source = Source(
+                        uri = "",
+                        versionFile = "version"
+                ),
+                params = VersionParams("", "")
+        )
+        val response = service.writeVersion(request).getError()
+
+        assertThat(response.message).isEqualTo("something is not right")
     }
 
     @Test

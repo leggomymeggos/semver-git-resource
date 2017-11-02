@@ -2,36 +2,40 @@ package com.github.leggomymeggos.semver_git_resource.driver
 
 import com.github.leggomymeggos.semver_git_resource.client.GitService
 import com.github.leggomymeggos.semver_git_resource.models.*
-import java.io.File
 import com.github.zafarkhaja.semver.Version as SemVer
 
 open class Driver(
         val gitUri: String,
-        val privateKey: String,
-        val username: String,
-        val password: String,
         val tagFilter: String,
         val skipSslVerification: Boolean,
         val sourceCodeBranch: String,
         val versionBranch: String,
         val versionFile: String,
         val initialVersion: SemVer,
-        val gitService: GitService = GitService()
+        var gitService: GitService = GitService()
 ) {
-    private val netRcFile = File(System.getenv("HOME"), ".netrc")
-    val privateKeyPath = File.createTempFile("tmp/private-key", ".txt")!!
+    open fun updateGitService(gitService: GitService) {
+        this.gitService = gitService
+    }
 
-    open fun check(version: SemVer): Response<List<SemVer>, VersionError> =
-            getRepo { number ->
+    open fun checkVersion(version: SemVer): Response<String, VersionError> =
+            getRepoForVersion { number ->
                 if (number.greaterThanOrEqualTo(version)) {
-                    Response.Success(listOf(number))
+                    Response.Success(number.toString())
                 } else {
-                    Response.Success(emptyList())
+                    Response.Success("")
+                }
+            }
+
+    open fun checkRefs(currentRef: String): Response<List<String>, VersionError> =
+            cloneOrFetchRepo(sourceCodeBranch).flatMap {
+                gitService.resetRepoDir(sourceCodeBranch).flatMap {
+                    gitService.commitsSince(currentRef)
                 }
             }
 
     open fun bump(bump: Bump): Response<SemVer, VersionError> =
-            getRepo { version ->
+            getRepoForVersion { version ->
                 val newVersion = bump.apply(version)
                 if (version == newVersion) {
                     Response.Success(version)
@@ -50,19 +54,14 @@ open class Driver(
                 }
             }
 
-    private fun <T> getRepo(block: (SemVer) -> Response<T, VersionError>): Response<T, VersionError> =
-            setUpUsernamePassword()
-                    .flatMap {
-                        setUpKey().flatMap {
-                            cloneOrFetchRepo().flatMap {
-                                gitService.resetRepoDir(versionBranch).flatMap {
-                                    readVersion().flatMap { version ->
-                                        block(version)
-                                    }
-                                }
-                            }
-                        }
-                    }.flatMapError { Response.Error(it) }
+    private fun <T> getRepoForVersion(block: (SemVer) -> Response<T, VersionError>): Response<T, VersionError> =
+            cloneOrFetchRepo(versionBranch).flatMap {
+                gitService.resetRepoDir(versionBranch).flatMap {
+                    readVersion().flatMap { version ->
+                        block(version)
+                    }
+                }
+            }.flatMapError { Response.Error(it) }
 
     private fun readVersion(): Response<SemVer, VersionError> {
         val versionFile = gitService.getFile(versionFile)
@@ -78,35 +77,6 @@ open class Driver(
         }
     }
 
-    private fun cloneOrFetchRepo(): Response<String, VersionError> {
-       return gitService.cloneOrFetch(gitUri, versionBranch)
-    }
-
-    private fun setUpKey(): Response<String, VersionError> {
-        if (privateKey.contains("ENCRYPTED")) {
-            return Response.Error(VersionError("private keys with passphrases are not supported"))
-        }
-
-        try {
-            privateKeyPath.mkdirs()
-            privateKeyPath.writeText(privateKey)
-            ProcessBuilder("/bin/sh", "-c", "chmod 600 $privateKeyPath").start().waitFor()
-        } catch (e: Exception) {
-            return Response.Error(VersionError("error saving private key", e))
-        }
-        gitService.setEnv("GIT_SSH_COMMAND", "ssh -o StrictHostKeyChecking=no -i $privateKeyPath")
-        return Response.Success("successfully saved private key")
-    }
-
-    private fun setUpUsernamePassword(): Response<String, VersionError> =
-            try {
-                netRcFile.createNewFile()
-                netRcFile.writeText("")
-                if (username.isNotEmpty() && password.isNotEmpty()) {
-                    netRcFile.writeText("default login $username password $password")
-                }
-                Response.Success("successfully saved username and password")
-            } catch (e: Exception) {
-                Response.Error(VersionError("error saving username and password", e))
-            }
+    private fun cloneOrFetchRepo(branch: String): Response<String, VersionError> =
+            gitService.cloneOrFetch(gitUri, branch)
 }

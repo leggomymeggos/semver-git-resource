@@ -1,22 +1,17 @@
 package com.github.leggomymeggos.semver_git_resource.check
 
-import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.databind.PropertyNamingStrategy
-import com.fasterxml.jackson.module.kotlin.readValue
 import com.github.leggomymeggos.semver_git_resource.models.CheckRequest
 import com.github.leggomymeggos.semver_git_resource.models.Source
 import com.github.leggomymeggos.semver_git_resource.models.Version
-import khttp.post
 import org.assertj.core.api.Assertions.assertThat
-import org.junit.*
-import java.io.ByteArrayInputStream
-import java.io.ByteArrayOutputStream
+import org.junit.AfterClass
+import org.junit.BeforeClass
+import org.junit.Test
 import java.io.File
-import java.io.PrintStream
 
-class CheckIntegrationTest {
+class CheckVersionIntegrationTest : BaseCheckIntegrationTest() {
     companion object {
-        private val LOGS_DIR = "./src/test/logs/check"
+        val LOGS_DIR = "./src/test/logs/check/"
 
         private val quickGitProcess: Process = ProcessBuilder("quickgit")
                 .redirectOutput(createFile("$LOGS_DIR/quickgit/", "success.txt"))
@@ -34,41 +29,9 @@ class CheckIntegrationTest {
         fun `global tear down`() {
             quickGitProcess.destroy()
         }
-
-        private fun createFile(filePath: String, fileName: String): File {
-            val file = File(filePath)
-            file.mkdirs()
-            return File(file, fileName)
-        }
     }
 
-    private val VERSION_FILE = "number"
-    private val VERSION_BRANCH = "version"
-
-    private val mapper = ObjectMapper()
-    private val originalOut = System.out!!
-    private val outputStream = ByteArrayOutputStream()
-
-    private val originalIn = System.`in`
-
-    private var gitUrl: String = ""
-    private val tempGitRepo = createTempDir()
-
-    @Before
-    fun `set up`() {
-        gitUrl = refreshGitUrl()
-        setUpTempGitRepo()
-
-        mapper.propertyNamingStrategy = PropertyNamingStrategy.SNAKE_CASE
-
-        System.setOut(PrintStream(outputStream))
-    }
-
-    @After
-    fun `tear down`() {
-        System.setIn(originalIn)
-        System.setOut(originalOut)
-    }
+    override fun logsDir(): String = "$LOGS_DIR/version"
 
     @Test
     fun `sets initial version from the source when there is no known version and no version file provided`() {
@@ -100,7 +63,7 @@ class CheckIntegrationTest {
     }
 
     @Test
-    fun `emits empty list when the last known number is higher than the number in the file`() {
+    fun `emits empty number when the last known number is higher than the number in the file`() {
         addVersionFile("2.0.1")
         CheckRequest(
                 version = Version(
@@ -114,7 +77,7 @@ class CheckIntegrationTest {
         val result = getResult()
 
         assertThat(outputStream.toString()).doesNotContain("error checking version")
-        assertThat(result).isEmpty()
+        assertThat(result.first().number).isEmpty()
     }
 
     @Test
@@ -192,29 +155,6 @@ class CheckIntegrationTest {
         assertThat(result).isEmpty()
     }
 
-    private fun refreshGitUrl(): String {
-        val response = post(url = "http://localhost:3000/", headers = mapOf("Content-Type" to "application/x-www-form-urlencoded"))
-        val text = response.text
-        return "${text.substring(text.lastIndexOf("http://localhost"), text.lastIndexOf(".git"))}.git" // substring is exclusive
-    }
-
-    private fun setUpTempGitRepo() {
-        ProcessBuilder(
-                "/bin/sh", "-c",
-                "cd ${tempGitRepo.path} ; " +
-                        "git init ; " +
-                        "git remote add origin $gitUrl ; " +
-                        "git commit --allow-empty -m \"first commit\" ; " +
-                        "git push -u origin master ; " +
-                        "git checkout -b $VERSION_BRANCH ; " +
-                        "git commit --allow-empty -m \"add version\" ; " +
-                        "git push -u origin $VERSION_BRANCH")
-                .redirectOutput(createFile("$LOGS_DIR/git", "setup_repo.txt"))
-                .redirectError(createFile("$LOGS_DIR/git", "setup_repo_error.txt"))
-                .start()
-                .waitFor()
-    }
-
     private fun baseSource() =
             Source(
                     versionFile = VERSION_FILE,
@@ -222,13 +162,6 @@ class CheckIntegrationTest {
                     uri = gitUrl,
                     privateKey = "i exist so this doesn't error"
             )
-
-    private fun CheckRequest.writeToStdIn() {
-        val jsonRequest = mapper.writeValueAsString(this)
-
-        val inputStream = ByteArrayInputStream(jsonRequest.toByteArray())
-        System.setIn(inputStream)
-    }
 
     private fun addVersionFile(number: String) {
         val versionFile = File(tempGitRepo, VERSION_FILE)
@@ -244,10 +177,5 @@ class CheckIntegrationTest {
                 .redirectError(createFile("$LOGS_DIR/git", "add_version_file_error.txt"))
                 .start()
                 .waitFor()
-    }
-
-    private fun getResult(): List<Version> {
-        val jsonResult = outputStream.toString()
-        return mapper.readValue(jsonResult.substring(jsonResult.indexOf("["), jsonResult.lastIndexOf("\n")))
     }
 }

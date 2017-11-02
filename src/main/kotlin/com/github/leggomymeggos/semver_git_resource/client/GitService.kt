@@ -2,6 +2,7 @@ package com.github.leggomymeggos.semver_git_resource.client
 
 import com.github.leggomymeggos.semver_git_resource.models.Response
 import com.github.leggomymeggos.semver_git_resource.models.VersionError
+import com.github.leggomymeggos.semver_git_resource.models.flatMap
 import java.io.File
 import java.nio.file.Files
 import java.util.stream.Collectors
@@ -55,6 +56,14 @@ open class GitService(private val gitClient: BashClient = GitClient()) {
     open fun setEnv(key: String, value: String) =
             gitClient.setEnv(key, value)
 
+    open fun commitsSince(sha: String): Response<List<String>, VersionError> =
+            gitClient.execute("cd $gitRepoDir ; git log --pretty=format:'%H'")
+                    .parseLogs()
+                    .flatMap { message ->
+                        val mostRecentCommit = message.split("\n").first()
+                        Response.Success(listOf(mostRecentCommit))
+                    }
+
     private fun Response<String, VersionError>.getLogs(): String =
             when (this) {
                 is Response.Error -> error.message
@@ -65,7 +74,7 @@ open class GitService(private val gitClient: BashClient = GitClient()) {
         val message = getLogs()
         println(message)
 
-        return if(message.contains("fatal")) {
+        return if (message.contains("fatal")) {
             return when (this) {
                 is Response.Success -> Response.Error(VersionError(this.value))
                 is Response.Error -> this
