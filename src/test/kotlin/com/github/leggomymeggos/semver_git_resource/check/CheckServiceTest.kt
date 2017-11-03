@@ -1,6 +1,6 @@
 package com.github.leggomymeggos.semver_git_resource.check
 
-import com.github.leggomymeggos.semver_git_resource.client.EnvironmentService
+import com.github.leggomymeggos.semver_git_resource.client.GitAuthenticationService
 import com.github.leggomymeggos.semver_git_resource.client.GitService
 import com.github.leggomymeggos.semver_git_resource.driver.Driver
 import com.github.leggomymeggos.semver_git_resource.driver.DriverFactory
@@ -19,7 +19,7 @@ import com.github.zafarkhaja.semver.Version as SemVer
 class CheckServiceTest {
     private val driver = mock<Driver>()
     private val driverFactory = mock<DriverFactory>()
-    private val envService = mock<EnvironmentService>()
+    private val envService = mock<GitAuthenticationService>()
     private val checker = CheckService(driverFactory, envService)
 
     @Before

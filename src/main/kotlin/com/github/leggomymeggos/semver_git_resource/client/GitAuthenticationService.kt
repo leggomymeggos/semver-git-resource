@@ -6,7 +6,7 @@ import com.github.leggomymeggos.semver_git_resource.models.VersionError
 import com.github.leggomymeggos.semver_git_resource.models.flatMap
 import java.io.File
 
-open class EnvironmentService(private val gitService: GitService) {
+open class GitAuthenticationService(private val gitService: GitService) {
     private val netRcFile = File(System.getenv("HOME"), ".netrc")
     val privateKeyPath = File.createTempFile("tmp/private-key", ".txt")!!
 

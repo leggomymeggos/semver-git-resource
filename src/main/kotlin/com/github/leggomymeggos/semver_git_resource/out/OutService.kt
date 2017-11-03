@@ -1,6 +1,6 @@
 package com.github.leggomymeggos.semver_git_resource.out
 
-import com.github.leggomymeggos.semver_git_resource.client.EnvironmentService
+import com.github.leggomymeggos.semver_git_resource.client.GitAuthenticationService
 import com.github.leggomymeggos.semver_git_resource.client.GitService
 import com.github.leggomymeggos.semver_git_resource.driver.DriverFactory
 import com.github.leggomymeggos.semver_git_resource.driver.DriverFactoryImpl
@@ -9,7 +9,7 @@ import com.github.leggomymeggos.semver_git_resource.models.*
 class OutService(
         private val driverFactory: DriverFactory = DriverFactoryImpl(),
         private val bumpFactory: BumpFactory = BumpFactory(),
-        private val envService: EnvironmentService = EnvironmentService(GitService())
+        private val envService: GitAuthenticationService = GitAuthenticationService(GitService())
 ) {
     fun writeVersion(request: OutRequest): Response<OutResponse, VersionError> =
             envService.setUpEnv(request.source).flatMap {

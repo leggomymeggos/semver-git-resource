@@ -9,9 +9,9 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.Test
 import java.io.File
 
-class EnvironmentServiceTest {
+class GitAuthenticationServiceTest {
     private val gitService = mock<GitService>()
-    private val envService = EnvironmentService(gitService)
+    private val envService = GitAuthenticationService(gitService)
 
     @Test
     fun `setUpEnv returns error if private key, username, and password are all empty`() {

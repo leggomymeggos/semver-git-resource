@@ -3,7 +3,7 @@ package com.github.leggomymeggos.semver_git_resource.check
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.PropertyNamingStrategy
 import com.fasterxml.jackson.module.kotlin.readValue
-import com.github.leggomymeggos.semver_git_resource.client.EnvironmentService
+import com.github.leggomymeggos.semver_git_resource.client.GitAuthenticationService
 import com.github.leggomymeggos.semver_git_resource.client.GitService
 import com.github.leggomymeggos.semver_git_resource.driver.DriverFactoryImpl
 import com.github.leggomymeggos.semver_git_resource.models.CheckRequest
@@ -22,7 +22,7 @@ fun main(args: Array<String>) {
 
     val result = CheckService(
             driverFactory = DriverFactoryImpl(),
-            envService = EnvironmentService(GitService())
+            authService = GitAuthenticationService(GitService())
     ).check(request)
 
     try {

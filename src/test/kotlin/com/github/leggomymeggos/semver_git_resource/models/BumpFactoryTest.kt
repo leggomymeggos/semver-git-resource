@@ -1,6 +1,5 @@
-package com.github.leggomymeggos.semver_git_resource.`in`
+package com.github.leggomymeggos.semver_git_resource.models
 
-import com.github.leggomymeggos.semver_git_resource.models.BumpFactory
 import com.github.zafarkhaja.semver.Version
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Test

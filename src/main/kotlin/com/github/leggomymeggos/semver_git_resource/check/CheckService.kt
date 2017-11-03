@@ -1,6 +1,6 @@
 package com.github.leggomymeggos.semver_git_resource.check
 
-import com.github.leggomymeggos.semver_git_resource.client.EnvironmentService
+import com.github.leggomymeggos.semver_git_resource.client.GitAuthenticationService
 import com.github.leggomymeggos.semver_git_resource.client.GitService
 import com.github.leggomymeggos.semver_git_resource.driver.DriverFactory
 import com.github.leggomymeggos.semver_git_resource.driver.DriverFactoryImpl
@@ -9,7 +9,7 @@ import com.github.zafarkhaja.semver.Version as SemVer
 
 class CheckService(
         private val driverFactory: DriverFactory = DriverFactoryImpl(),
-        private val envService: EnvironmentService = EnvironmentService(GitService())
+        private val authService: GitAuthenticationService = GitAuthenticationService(GitService())
 ) {
     fun check(request: CheckRequest): Response<List<Version>, VersionError> {
         var version: SemVer? = null
@@ -22,12 +22,11 @@ class CheckService(
             }
         }
 
-        return envService.setUpEnv(request.source).flatMap {
-            val driverResponse = driverFactory.fromSource(request.source)
-            driverResponse
+        return authService.setUpEnv(request.source).flatMap {
+            driverFactory.fromSource(request.source)
                     .flatMapError { it.driverError() }
                     .flatMap { driver ->
-                        driver.updateGitService(envService.gitService())
+                        driver.updateGitService(authService.gitService())
                         driver.checkRefs(request.version?.ref ?: "")
                                 .flatMapError { it.refsError() }
                                 .flatMap { refs ->
@@ -40,7 +39,7 @@ class CheckService(
                                             }
                                 }
                     }
-        }.flatMapError { Response.Error(it) }
+        }
     }
 
     private fun VersionError.refsError(): Response.Error<VersionError> =

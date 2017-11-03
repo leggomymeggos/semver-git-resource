@@ -1,6 +1,6 @@
 package com.github.leggomymeggos.semver_git_resource.out
 
-import com.github.leggomymeggos.semver_git_resource.client.EnvironmentService
+import com.github.leggomymeggos.semver_git_resource.client.GitAuthenticationService
 import com.github.leggomymeggos.semver_git_resource.driver.Driver
 import com.github.leggomymeggos.semver_git_resource.driver.DriverFactory
 import com.github.leggomymeggos.semver_git_resource.models.*
@@ -17,7 +17,7 @@ class OutServiceTest {
     private val driver = mock<Driver>()
     private val driverFactory = mock<DriverFactory>()
     private val bumpFactory = mock<BumpFactory>()
-    private val envService = mock<EnvironmentService>()
+    private val envService = mock<GitAuthenticationService>()
     private val service = OutService(driverFactory, bumpFactory, envService)
 
     @Before

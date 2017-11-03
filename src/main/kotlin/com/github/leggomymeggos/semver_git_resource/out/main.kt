@@ -3,7 +3,7 @@ package com.github.leggomymeggos.semver_git_resource.out
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.PropertyNamingStrategy
 import com.fasterxml.jackson.module.kotlin.readValue
-import com.github.leggomymeggos.semver_git_resource.client.EnvironmentService
+import com.github.leggomymeggos.semver_git_resource.client.GitAuthenticationService
 import com.github.leggomymeggos.semver_git_resource.client.GitService
 import com.github.leggomymeggos.semver_git_resource.models.OutRequest
 import com.github.leggomymeggos.semver_git_resource.models.getError
@@ -19,7 +19,7 @@ fun main(args: Array<String>) {
 
     val request = mapper.readValue<OutRequest>(reader.readLines().joinToString())
 
-    val service = OutService(envService = EnvironmentService(GitService()))
+    val service = OutService(envService = GitAuthenticationService(GitService()))
     val response = service.writeVersion(request)
 
     try {
