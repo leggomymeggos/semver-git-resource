@@ -215,17 +215,57 @@ class GitServiceTest {
     }
 
     @Test
-    fun `commitsSince asks for the commits`() {
+    fun `commitsSince gets the first commit in the repo`() {
         service.commitsSince("abc123")
 
-        verify(client).execute("cd ${service.gitRepoDir} ; git log --pretty=format:'%H'")
+        verify(client).execute("cd ${service.gitRepoDir} ; git rev-list --max-parents=0 HEAD")
     }
 
     @Test
-    fun `commitsSince returns the most recent commit`() {
-        whenever(client.execute(any())).thenReturn(Response.Success("commit3\ncommit2\ncommit1"))
+    fun `commitsSince asks for the commits since one before the given commit`() {
+        whenever(client.execute(any())).thenReturn(Response.Success("def456"))
+
+        service.commitsSince("abc123")
+
+        verify(client).execute("cd ${service.gitRepoDir} ; git log --reverse abc123~1...HEAD --format='%H'")
+    }
+
+    @Test
+    fun `commitsSince asks for commits since the given commit when it is the first known commit`() {
+        whenever(client.execute(any())).thenReturn(Response.Success("abc123"))
+
+        service.commitsSince("abc123")
+
+        verify(client).execute("cd ${service.gitRepoDir} ; git log --reverse abc123...HEAD --format='%H'")
+    }
+
+    @Test
+    fun `commitsSince asks for the most recent commit if there is no recent version`() {
+        whenever(client.execute(any())).thenReturn(Response.Success("def12345"))
+
+        service.commitsSince("")
+
+        verify(client).execute("cd ${service.gitRepoDir} ; git log --reverse --format='%H'")
+    }
+
+    @Test
+    fun `commitsSince returns a list of the most recent commits`() {
+        whenever(client.execute(any()))
+                .thenReturn(Response.Success("def12345"))
+                .thenReturn(Response.Success("commit3\ncommit2\ncommit1"))
 
         val response = service.commitsSince("abc123").getSuccess()
+
+        assertThat(response).containsExactly("commit3", "commit2", "commit1")
+    }
+
+    @Test
+    fun `commitsSince only returns the most recent commit if there is no recent version`() {
+        whenever(client.execute(any()))
+                .thenReturn(Response.Success("def12345"))
+                .thenReturn(Response.Success("commit1\ncommit2\ncommit3"))
+
+        val response = service.commitsSince("").getSuccess()
 
         assertThat(response).containsExactly("commit3")
     }

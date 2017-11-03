@@ -173,8 +173,8 @@ class CheckVersionIntegrationTest : BaseCheckIntegrationTest() {
                         "git add $VERSION_FILE ; " +
                         "git commit -m \"add version file\" ; " +
                         "git push origin $VERSION_BRANCH")
-                .redirectOutput(createFile("$LOGS_DIR/git", "add_version_file.txt"))
-                .redirectError(createFile("$LOGS_DIR/git", "add_version_file_error.txt"))
+                .redirectOutput(createFile("${logsDir()}/git", "add_version_file.txt"))
+                .redirectError(createFile("${logsDir()}/git", "add_version_file_error.txt"))
                 .start()
                 .waitFor()
     }

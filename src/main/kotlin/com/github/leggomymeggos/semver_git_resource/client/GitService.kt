@@ -56,19 +56,38 @@ open class GitService(private val gitClient: BashClient = GitClient()) {
     open fun setEnv(key: String, value: String) =
             gitClient.setEnv(key, value)
 
-    open fun commitsSince(sha: String): Response<List<String>, VersionError> =
-            gitClient.execute("cd $gitRepoDir ; git log --pretty=format:'%H'")
-                    .parseLogs()
-                    .flatMap { message ->
-                        val mostRecentCommit = message.split("\n").first()
-                        Response.Success(listOf(mostRecentCommit))
-                    }
+    open fun commitsSince(sha: String): Response<List<String>, VersionError> {
+        val firstCommit = gitClient.execute("cd $gitRepoDir ; git rev-list --max-parents=0 HEAD").getLogs()
+
+        val delta = if (sha.isNotEmpty()) {
+            if(sha == firstCommit) {
+                "$sha...HEAD "
+            } else
+                "$sha~1...HEAD "
+        } else sha
+
+        return gitClient.execute("cd $gitRepoDir ; git log --reverse $delta--format='%H'")
+                .parseLogs()
+                .flatMap { commitLog ->
+                    Response.Success(commitLog.getDelta(sha))
+                }
+    }
 
     private fun Response<String, VersionError>.getLogs(): String =
             when (this) {
                 is Response.Error -> error.message
                 is Response.Success -> value
             }
+
+    private fun String.getDelta(sha: String): List<String> {
+        val commits = split("\n").toMutableList()
+
+        return if (sha.isEmpty()) {
+            listOf(commits.last())
+        } else {
+            commits
+        }
+    }
 
     private fun Response<String, VersionError>.parseLogs(): Response<String, VersionError> {
         val message = getLogs()

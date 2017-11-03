@@ -15,7 +15,7 @@ class GitClient : BashClient {
 
     override fun execute(command: String): Response<String, VersionError> =
             try {
-                val processBuilder = ProcessBuilder(mutableListOf("/bin/sh", "-c", command))
+                val processBuilder = ProcessBuilder("/bin/sh", "-c", command)
                         .redirectOutput(LOGS_FILE)
                         .redirectError(ERROR_FILE)
                 processBuilder.environment().putAll(envMap)
