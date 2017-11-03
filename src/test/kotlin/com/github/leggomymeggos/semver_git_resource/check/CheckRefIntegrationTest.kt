@@ -81,8 +81,23 @@ class CheckRefIntegrationTest : BaseCheckIntegrationTest() {
         val result = getResult()
 
         val allCommits = allCommits(since = firstCommit)
-        val map = result.map { it.ref }
-        assertThat(map).containsAll(allCommits)
+        assertThat(result.map { it.ref }).containsAll(allCommits)
+    }
+
+    @Test
+    fun `returns a list with the current sha when it is the most recent`() {
+        addCommit("add a commit")
+        val mostRecentRef = addCommit("add another commit")
+
+        CheckRequest(
+                version = Version(number = "", ref = mostRecentRef),
+                source = baseSource()
+        ).writeToStdIn()
+
+        main(arrayOf())
+
+        val result = getResult()
+        assertThat(result.map { it.ref }).containsExactly(mostRecentRef)
     }
 
     private fun firstCommit(): String {
