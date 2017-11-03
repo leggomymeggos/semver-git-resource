@@ -215,7 +215,27 @@ class GitServiceTest {
     }
 
     @Test
+    fun `commitsSince checks if the sha is in the repo`() {
+        service.commitsSince("theSha")
+
+        verify(client).execute("cd ${service.gitRepoDir} ; git cat-file -e theSha")
+    }
+
+    @Test
+    fun `commitsSince just asks for most recent commit if the sha is not in the repo`() {
+        // this covers if the sha is empty, i.e. there is no recent version
+        whenever(client.execute(any()))
+                .thenReturn(Response.Success("not here bro"))
+
+        service.commitsSince("theSha")
+
+        verify(client).execute("cd ${service.gitRepoDir} ; git log -1 --format='%H'")
+    }
+
+    @Test
     fun `commitsSince gets the first commit in the repo`() {
+        whenever(client.execute(any())).thenReturn(Response.Success(""))
+
         service.commitsSince("abc123")
 
         verify(client).execute("cd ${service.gitRepoDir} ; git rev-list --max-parents=0 HEAD")
@@ -223,7 +243,9 @@ class GitServiceTest {
 
     @Test
     fun `commitsSince asks for the commits since one before the given commit`() {
-        whenever(client.execute(any())).thenReturn(Response.Success("def456"))
+        whenever(client.execute(any()))
+                .thenReturn(Response.Success(""))
+                .thenReturn(Response.Success("def456"))
 
         service.commitsSince("abc123")
 
@@ -232,7 +254,9 @@ class GitServiceTest {
 
     @Test
     fun `commitsSince asks for commits since the given commit when it is the first known commit`() {
-        whenever(client.execute(any())).thenReturn(Response.Success("abc123"))
+        whenever(client.execute(any()))
+                .thenReturn(Response.Success(""))
+                .thenReturn(Response.Success("abc123"))
 
         service.commitsSince("abc123")
 
@@ -240,34 +264,15 @@ class GitServiceTest {
     }
 
     @Test
-    fun `commitsSince asks for the most recent commit if there is no recent version`() {
-        whenever(client.execute(any())).thenReturn(Response.Success("def12345"))
-
-        service.commitsSince("")
-
-        verify(client).execute("cd ${service.gitRepoDir} ; git log --reverse --format='%H'")
-    }
-
-    @Test
     fun `commitsSince returns a list of the most recent commits`() {
         whenever(client.execute(any()))
+                .thenReturn(Response.Success(""))
                 .thenReturn(Response.Success("def12345"))
                 .thenReturn(Response.Success("commit3\ncommit2\ncommit1"))
 
         val response = service.commitsSince("abc123").getSuccess()
 
         assertThat(response).containsExactly("commit3", "commit2", "commit1")
-    }
-
-    @Test
-    fun `commitsSince only returns the most recent commit if there is no recent version`() {
-        whenever(client.execute(any()))
-                .thenReturn(Response.Success("def12345"))
-                .thenReturn(Response.Success("commit1\ncommit2\ncommit3"))
-
-        val response = service.commitsSince("").getSuccess()
-
-        assertThat(response).containsExactly("commit3")
     }
 
     @Test

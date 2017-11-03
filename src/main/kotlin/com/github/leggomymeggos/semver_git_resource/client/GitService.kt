@@ -45,49 +45,39 @@ open class GitService(private val gitClient: BashClient = GitClient()) {
         }
     }
 
-    open fun resetRepoDir(branch: String): Response<String, VersionError> {
-        return gitClient.execute("cd $gitRepoDir ; git reset --hard origin/$branch").parseLogs()
-    }
+    open fun resetRepoDir(branch: String): Response<String, VersionError> =
+            gitClient.execute("cd $gitRepoDir ; git reset --hard origin/$branch").parseLogs()
 
-    open fun getFile(file: String): File {
-        return File("$gitRepoDir/$file")
-    }
+    open fun getFile(file: String): File =
+            File("$gitRepoDir/$file")
 
     open fun setEnv(key: String, value: String) =
             gitClient.setEnv(key, value)
 
     open fun commitsSince(sha: String): Response<List<String>, VersionError> {
-        val firstCommit = gitClient.execute("cd $gitRepoDir ; git rev-list --max-parents=0 HEAD").getLogs()
+        val shaExists = gitClient.execute("cd $gitRepoDir ; git cat-file -e $sha").getLogs().isEmpty()
 
-        val delta = if (sha.isNotEmpty()) {
-            if(sha == firstCommit) {
-                "$sha...HEAD "
-            } else
-                "$sha~1...HEAD "
-        } else sha
+        val delta = if (shaExists) {
+            val firstCommit = gitClient.execute("cd $gitRepoDir ; git rev-list --max-parents=0 HEAD").getLogs()
+            if (sha == firstCommit) {
+                "--reverse $sha...HEAD"
+            } else "--reverse $sha~1...HEAD"
+        } else "-1"
 
-        return gitClient.execute("cd $gitRepoDir ; git log --reverse $delta--format='%H'")
+        return gitClient.execute("cd $gitRepoDir ; git log $delta --format='%H'")
                 .parseLogs()
                 .flatMap { commitLog ->
-                    Response.Success(commitLog.getDelta(sha))
+                    Response.Success(commitLog.getDelta())
                 }
     }
+
+    private fun String.getDelta(): List<String> = split("\n").toMutableList()
 
     private fun Response<String, VersionError>.getLogs(): String =
             when (this) {
                 is Response.Error -> error.message
                 is Response.Success -> value
             }
-
-    private fun String.getDelta(sha: String): List<String> {
-        val commits = split("\n").toMutableList()
-
-        return if (sha.isEmpty()) {
-            listOf(commits.last())
-        } else {
-            commits
-        }
-    }
 
     private fun Response<String, VersionError>.parseLogs(): Response<String, VersionError> {
         val message = getLogs()

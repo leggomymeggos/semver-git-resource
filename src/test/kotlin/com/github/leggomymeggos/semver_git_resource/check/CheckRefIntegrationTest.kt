@@ -100,6 +100,22 @@ class CheckRefIntegrationTest : BaseCheckIntegrationTest() {
         assertThat(result.map { it.ref }).containsExactly(mostRecentRef)
     }
 
+    @Test
+    fun `returns a list with the most recent sha when the given sha is not in the repo`() {
+        addCommit("add a commit")
+        val mostRecentRef = addCommit("add another commit")
+
+        CheckRequest(
+                version = Version(number = "", ref = "totallyValid123"),
+                source = baseSource()
+        ).writeToStdIn()
+
+        main(arrayOf())
+
+        val result = getResult()
+        assertThat(result.map { it.ref }).containsExactly(mostRecentRef)
+    }
+
     private fun firstCommit(): String {
         ProcessBuilder("/bin/sh", "-c",
                 "cd ${tempGitRepo.path} ; " +
